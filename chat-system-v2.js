@@ -569,6 +569,8 @@ class AIGirlfriendChatSystemV2 {
                 this.updateChatUI(aiMessage);
                 
                 // 使用流式响应
+                console.log('🔍 当前角色对象:', this.currentCharacter);
+                console.log('🔍 角色ID:', this.currentCharacter.id);
                 const fullResponse = await window.aiChatIntegration.sendMessageStream(
                     message, 
                     this.currentCharacter.id, 

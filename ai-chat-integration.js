@@ -309,8 +309,10 @@ ${characterData.characterTraits}`;
             }
             
             // 处理character参数 - 可能是字符串ID或对象
+            console.log('🔍 传入的character参数:', character, '类型:', typeof character);
             const characterId = typeof character === 'string' ? character : (character.id || character.name || 'yuki');
             const normalizedCharacterId = characterId.toLowerCase();
+            console.log('🔍 解析的角色ID:', characterId, '规范化后:', normalizedCharacterId);
             
             // 准备角色数据
             const characterData = this.getCharacterData(normalizedCharacterId);
@@ -328,6 +330,8 @@ ${characterData.characterTraits}`;
             
             // 调用后端API
             const apiUrl = this.API_URL ? `${this.API_URL}/api/chat/${normalizedCharacterId}` : `/api/chat/${normalizedCharacterId}`;
+            console.log('🔍 API_URL:', this.API_URL);
+            console.log('🔍 最终请求URL:', apiUrl);
             const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: {
