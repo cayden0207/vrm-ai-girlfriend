@@ -1427,13 +1427,17 @@ app.post('/api/chat/:characterId', chatLimiter, async (req, res) => {
             });
         }
         
-        // 验证用户
-        const user = await UserManager.getUser(userId);
+        // 验证用户，如果不存在则自动创建
+        let user = await UserManager.getUser(userId);
         if (!user) {
-            return res.status(404).json({ 
-                success: false, 
-                error: '用户不存在' 
+            // 自动创建用户
+            const walletAddress = userId.replace('wallet_', '');
+            user = await UserManager.createUser({
+                walletAddress,
+                nickname: `用户${walletAddress.slice(-8)}`,
+                avatar: '🦊'
             });
+            console.log(`🎉 自动创建用户: ${formatAddress(walletAddress)}`);
         }
         
         // 生成AI回复（内部已包含角色隔离验证）
