@@ -1440,21 +1440,33 @@ app.post('/api/chat/:characterId', chatLimiter, async (req, res) => {
             });
         }
         
-        // 验证用户，如果不存在则自动创建
-        console.log('🔍 查找用户:', userId);
-        let user = await UserManager.getUser(userId);
-        if (!user) {
-            console.log('👤 用户不存在，尝试创建...');
-            // 自动创建用户
-            const walletAddress = userId.replace('wallet_', '');
-            user = await UserManager.createUser({
-                walletAddress,
-                nickname: `用户${walletAddress.slice(-8)}`,
-                avatar: '🦊'
-            });
-            console.log(`🎉 自动创建用户成功: ${formatAddress(walletAddress)}`);
+        // 在Vercel环境下，跳过用户文件系统验证
+        let user = null;
+        if (process.env.VERCEL) {
+            console.log('⚡ Vercel环境：使用简化用户模式');
+            // 在Vercel上不使用文件系统，直接创建虚拟用户
+            user = {
+                id: userId,
+                nickname: `用户${userId.slice(-8)}`,
+                avatar: '🦊',
+                walletAddress: userId.replace('wallet_', '')
+            };
         } else {
-            console.log('✅ 找到现有用户');
+            // 本地环境使用文件系统
+            console.log('🔍 查找用户:', userId);
+            user = await UserManager.getUser(userId);
+            if (!user) {
+                console.log('👤 用户不存在，尝试创建...');
+                const walletAddress = userId.replace('wallet_', '');
+                user = await UserManager.createUser({
+                    walletAddress,
+                    nickname: `用户${walletAddress.slice(-8)}`,
+                    avatar: '🦊'
+                });
+                console.log(`🎉 自动创建用户成功: ${formatAddress(walletAddress)}`);
+            } else {
+                console.log('✅ 找到现有用户');
+            }
         }
         
         // 生成AI回复（内部已包含角色隔离验证）
