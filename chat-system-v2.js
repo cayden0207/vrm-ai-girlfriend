@@ -552,8 +552,8 @@ class AIGirlfriendChatSystemV2 {
         this.isLoading = true;
         
         try {
-            // 使用OpenAI API进行聊天，支持流式响应
-            if (window.aiChatIntegration) {
+            // 🚨 强制使用后端API进行测试
+            if (false && window.aiChatIntegration) {
                 // 创建一个空的AI消息占位符
                 const aiMessage = {
                     id: Date.now() + 1,
