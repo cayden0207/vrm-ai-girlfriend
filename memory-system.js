@@ -3,10 +3,8 @@
  * 基于Supabase + OpenAI的企业级记忆解决方案
  */
 
-// Supabase客户端配置
-const SUPABASE_URL = 'YOUR_SUPABASE_URL_HERE'; // 替换为你的Supabase项目URL
-const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY_HERE'; // 替换为你的Supabase匿名密钥
-const OPENAI_API_KEY = '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'; // OpenAI API密钥
+// API配置通过后端获取，前端不存储敏感信息
+const API_BASE_URL = window.AppConfig ? window.AppConfig.getApiUrl() : 'http://localhost:3000';
 
 // 内存管理类
 class MemorySystem {
