@@ -476,8 +476,8 @@ const memorySystem = new MemorySystem();
 // 导出到全局作用域
 window.memorySystem = memorySystem;
 
-console.log('🧠 记忆管理系统模块已加载');
-console.log('💡 使用说明:');
-console.log('1. 先配置SUPABASE_URL、SUPABASE_ANON_KEY、OPENAI_API_KEY');
-console.log('2. 运行 npm install @supabase/supabase-js openai');
-console.log('3. 调用 await memorySystem.initialize() 初始化');
+// console.log('🧠 记忆管理系统模块已加载');
+// console.log('💡 使用说明:');
+// console.log('1. 先配置SUPABASE_URL、SUPABASE_ANON_KEY、OPENAI_API_KEY');
+// console.log('2. 运行 npm install @supabase/supabase-js openai');
+// console.log('3. 调用 await memorySystem.initialize() 初始化');

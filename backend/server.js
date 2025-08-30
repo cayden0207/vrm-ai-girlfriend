@@ -959,6 +959,11 @@ ${recentChats.map(chat => `${chat.sender === 'user' ? '用户' : character.name}
         console.log('🔄 调用OpenAI API...');
         console.log('🔑 API Key长度:', AI_CONFIG.apiKey ? AI_CONFIG.apiKey.length : 'undefined');
         
+        // 简化的提示词进行测试
+        const simplePrompt = `你是Alice，一个活泼可爱的AI女友。用户对你说：${prompt.includes('用户说:') ? prompt.split('用户说:')[1] : prompt}
+        
+请用JSON格式回复：{"content": "你的简短回复", "emotion": "happy"}`;
+        
         const response = await fetch(`${AI_CONFIG.baseURL}/chat/completions`, {
             method: 'POST',
             headers: {
@@ -967,7 +972,7 @@ ${recentChats.map(chat => `${chat.sender === 'user' ? '用户' : character.name}
             },
             body: JSON.stringify({
                 model: AI_CONFIG.model,
-                messages: [{ role: 'user', content: prompt }],
+                messages: [{ role: 'user', content: simplePrompt }],
                 temperature: AI_CONFIG.temperature,
                 max_tokens: AI_CONFIG.maxTokens
             })
@@ -983,8 +988,12 @@ ${recentChats.map(chat => `${chat.sender === 'user' ? '用户' : character.name}
         }
         
         if (data.choices && data.choices[0]) {
+            const content = data.choices[0].message.content;
+            console.log('🎯 OpenAI原始回复:', content);
+            
             try {
-                const result = JSON.parse(data.choices[0].message.content);
+                const result = JSON.parse(content);
+                console.log('✅ JSON解析成功:', result);
                 return result;
             } catch (e) {
                 // 如果不是JSON格式，返回原始内容

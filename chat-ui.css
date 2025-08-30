@@ -148,9 +148,11 @@
     word-wrap: break-word;
     overflow-wrap: break-word;
     hyphens: auto;
-    white-space: pre-wrap;
-    width: fit-content;
-    min-width: 0;
+    white-space: normal;
+    max-width: 300px;
+    min-width: 60px;
+    overflow: visible;
+    text-overflow: unset;
 }
 
 .message-bubble.user .bubble-content::after {
@@ -178,9 +180,11 @@
     word-wrap: break-word;
     overflow-wrap: break-word;
     hyphens: auto;
-    white-space: pre-wrap;
-    width: fit-content;
-    min-width: 0;
+    white-space: normal;
+    max-width: 300px;
+    min-width: 60px;
+    overflow: visible;
+    text-overflow: unset;
 }
 
 .message-bubble.ai .bubble-content::after {
