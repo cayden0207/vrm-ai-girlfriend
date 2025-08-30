@@ -14,6 +14,9 @@ const rateLimit = require('express-rate-limit');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// 配置信任代理（Vercel环境）
+app.set('trust proxy', 1);
+
 // 初始化Supabase用户管理器
 const supabaseUserManager = new SupabaseUserManager();
 
