@@ -308,9 +308,12 @@ ${characterData.characterTraits}`;
                 this.conversationHistory = this.conversationHistory.slice(-this.maxHistoryLength);
             }
             
+            // 处理character参数 - 可能是字符串ID或对象
+            const characterId = typeof character === 'string' ? character : (character.id || character.name || 'yuki');
+            const normalizedCharacterId = characterId.toLowerCase();
+            
             // 准备角色数据
-            const characterData = this.getCharacterData(character.name || character.id);
-            const characterId = (character.id || character.name || 'yuki').toLowerCase();
+            const characterData = this.getCharacterData(normalizedCharacterId);
             
             // 构建请求体
             const requestBody = {
@@ -318,13 +321,13 @@ ${characterData.characterTraits}`;
                 message: message,
                 character: {
                     ...characterData,
-                    id: characterId,
+                    id: normalizedCharacterId,
                     language: language
                 }
             };
             
             // 调用后端API
-            const apiUrl = this.API_URL ? `${this.API_URL}/api/chat/${characterId}` : `/api/chat/${characterId}`;
+            const apiUrl = this.API_URL ? `${this.API_URL}/api/chat/${normalizedCharacterId}` : `/api/chat/${normalizedCharacterId}`;
             const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: {

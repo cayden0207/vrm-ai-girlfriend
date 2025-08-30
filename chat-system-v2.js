@@ -571,7 +571,7 @@ class AIGirlfriendChatSystemV2 {
                 // 使用流式响应
                 const fullResponse = await window.aiChatIntegration.sendMessageStream(
                     message, 
-                    this.currentCharacter, 
+                    this.currentCharacter.id, 
                     'cn', // 默认使用中文
                     (chunk) => {
                         // 逐步更新消息内容
