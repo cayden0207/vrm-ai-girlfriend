@@ -297,11 +297,11 @@ class MemoryManager {
     // 验证角色ID有效性
     static isValidCharacterId(characterId) {
         const validCharacters = [
-            'yuki', 'sakura', 'miku', 'rei', 'akira', 'hana', 'kana', 'yui',
-            'emi', 'mai', 'nana', 'riko', 'saki', 'ayumi', 'hinata', 'shiori',
-            'mizuki', 'asuka', 'yuna', 'kohaku', 'momoka', 'haruka'
+            'alice', 'ash', 'bobo', 'elinyaa', 'fliza', 'imeris', 'kyoko', 'lena',
+            'lilium', 'maple', 'miru', 'miumiu', 'neco', 'nekona', 'notia', 'ququ',
+            'rainy', 'rindo', 'sikirei', 'vivi', 'wolf', 'wolferia', 'yawl', 'yuu-yii', 'zwei'
         ];
-        return validCharacters.includes(characterId);
+        return validCharacters.includes(characterId.toLowerCase());
     }
     
     // 确保记忆结构完整（兼容旧数据并验证角色隔离）
