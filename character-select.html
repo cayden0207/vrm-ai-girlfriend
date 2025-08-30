@@ -3046,7 +3046,7 @@
 
             try {
                 console.log('开始加载默认动画...');
-                const clip = await loadMixamoAnimation('mixamo animation/Look Around.fbx', currentVRM);
+                const clip = await loadMixamoAnimation(encodeURI('mixamo animation/Look Around.fbx'), currentVRM);
                 
                 if (animationAction) {
                     animationAction.stop();
