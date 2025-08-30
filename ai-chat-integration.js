@@ -288,6 +288,43 @@ ${characterData.characterTraits}`;
     }
     
     /**
+     * 确保用户已在后端注册
+     */
+    async ensureUserRegistered() {
+        if (!this.walletAddress) {
+            console.warn('⚠️ 没有钱包地址，跳过用户注册验证');
+            return;
+        }
+        
+        try {
+            // 调用认证API确保用户存在
+            const authUrl = this.API_URL ? `${this.API_URL}/api/user/auth` : `/api/user/auth`;
+            console.log('🔍 验证用户注册状态:', authUrl);
+            
+            const response = await fetch(authUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    walletAddress: this.walletAddress,
+                    signature: 'auto_generated', // 简化版本，生产环境应该有真实签名
+                    message: `登录时间: ${new Date().toISOString()}`
+                })
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                console.log('✅ 用户注册状态验证成功:', result);
+            } else {
+                console.warn('⚠️ 用户注册验证失败:', response.status);
+            }
+        } catch (error) {
+            console.error('❌ 用户注册验证错误:', error);
+        }
+    }
+    
+    /**
      * 发送消息到后端API并获取回复
      */
     async sendMessage(message, character, language = 'cn') {
@@ -296,6 +333,9 @@ ${characterData.characterTraits}`;
             if (!this.userId) {
                 this.initializeUser();
             }
+            
+            // 确保用户已在后端注册
+            await this.ensureUserRegistered();
             
             // 添加用户消息到历史
             this.conversationHistory.push({
