@@ -736,7 +736,14 @@ class AIProxy {
             return response;
             
         } catch (error) {
-            console.error('❌ AI回复生成失败:', error);
+            console.error('❌ AI回复生成失败:', error.message);
+            console.error('❌ 错误详情:', error.stack);
+            console.error('❌ API配置:', {
+                hasApiKey: !!AI_CONFIG.apiKey,
+                keyLength: AI_CONFIG.apiKey ? AI_CONFIG.apiKey.length : 0,
+                model: AI_CONFIG.model,
+                baseURL: AI_CONFIG.baseURL
+            });
             return {
                 content: '抱歉，我现在有点累，可以稍后再聊吗？',
                 emotion: 'apologetic'
@@ -949,6 +956,9 @@ ${recentChats.map(chat => `${chat.sender === 'user' ? '用户' : character.name}
     
     // OpenAI API调用
     static async callOpenAI(prompt) {
+        console.log('🔄 调用OpenAI API...');
+        console.log('🔑 API Key长度:', AI_CONFIG.apiKey ? AI_CONFIG.apiKey.length : 'undefined');
+        
         const response = await fetch(`${AI_CONFIG.baseURL}/chat/completions`, {
             method: 'POST',
             headers: {
@@ -963,7 +973,14 @@ ${recentChats.map(chat => `${chat.sender === 'user' ? '用户' : character.name}
             })
         });
         
+        console.log('📡 API响应状态:', response.status);
+        
         const data = await response.json();
+        console.log('📦 API响应数据:', JSON.stringify(data, null, 2));
+        
+        if (!response.ok) {
+            throw new Error(`OpenAI API错误: ${response.status} - ${data.error?.message || '未知错误'}`);
+        }
         
         if (data.choices && data.choices[0]) {
             try {
