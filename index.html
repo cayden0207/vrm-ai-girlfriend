@@ -1,0 +1,4184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' blob: http://localhost:3000 https://api.openai.com;">
+    <title>AI女友聊天游戏 🌸</title>
+    <link rel="stylesheet" href="chat-ui.css">
+    <link rel="stylesheet" href="wallet-ui.css">
+    
+    <!-- 记忆管理系统 -->
+    <script src="memory-system.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: transparent;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* VRM展示区 - 全屏 */
+        .vrm-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            /* 移除CSS背景，让Three.js场景背景显示 */
+            background: transparent;
+        }
+
+        /* AI对话气泡 */
+        .ai-speech-bubble {
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(220, 220, 220, 0.95);
+            color: #333;
+            padding: 18px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 500;
+            max-width: 450px;
+            min-width: 250px;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+            opacity: 0;
+            animation: bubbleFadeIn 0.5s forwards;
+            z-index: 100;
+            line-height: 1.5;
+            letter-spacing: 0.5px;
+        }
+
+        .ai-speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 18px solid transparent;
+            border-right: 18px solid transparent;
+            border-top: 18px solid rgba(220, 220, 220, 0.95);
+        }
+
+        @keyframes bubbleFadeIn {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        @keyframes bubbleFadeOut {
+            from {
+                opacity: 1;
+            }
+            to {
+                opacity: 0;
+            }
+        }
+
+        .vrm-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+
+
+        /* 复古音乐播放器 */
+        .music-controls {
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            width: 280px;
+            height: 120px;
+            background: linear-gradient(135deg, #e8b4ff 0%, #d19cff 50%, #b96fff 100%);
+            border-radius: 15px;
+            border: 6px solid #4a2c5a;
+            color: #2d1b3d;
+            z-index: 1001;
+            padding: 15px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.4);
+            font-family: 'Arial', sans-serif;
+        }
+
+        .music-window-title {
+            background: linear-gradient(90deg, #ffb366 0%, #ffa64d 100%);
+            margin: -15px -15px 10px -15px;
+            padding: 8px 15px;
+            border-radius: 9px 9px 0 0;
+            font-size: 12px;
+            font-weight: bold;
+            color: #2d1b3d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .window-controls {
+            display: flex;
+            gap: 5px;
+        }
+
+        .window-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+        }
+
+        .minimize-btn { background: #ffd23f; }
+        .maximize-btn { background: #28ca42; }
+        .close-btn { background: #ff5f57; }
+
+        .music-player-content {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .music-controls-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .music-control-btn {
+            width: 35px;
+            height: 25px;
+            background: #6c4a7a;
+            border: 2px solid #2d1b3d;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .music-control-btn:hover {
+            background: #8b5fa3;
+            transform: translateY(-1px);
+        }
+
+        .play-btn {
+            width: 45px !important;
+            background: #4a7c59 !important;
+        }
+
+        .play-btn:hover {
+            background: #5d9973 !important;
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .volume-slider {
+            width: 120px;
+            height: 4px;
+            border-radius: 2px;
+            background: #4a2c5a;
+            outline: none;
+            cursor: pointer;
+            -webkit-appearance: none;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 2px;
+            background: #ffb366;
+            cursor: pointer;
+            border: 1px solid #2d1b3d;
+        }
+
+        .volume-slider::-moz-range-thumb {
+            width: 14px;
+            height: 14px;
+            border-radius: 2px;
+            background: #ffb366;
+            cursor: pointer;
+            border: 1px solid #2d1b3d;
+        }
+
+        .volume-label {
+            font-size: 10px;
+            min-width: 25px;
+            font-weight: bold;
+            text-align: right;
+        }
+
+
+        .emotion-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+
+        .emotion-btn {
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .emotion-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .emotion-btn.active {
+            background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);
+            color: #2d3436;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .vrm-container {
+                width: 100%;
+                height: 100vh;
+            }
+        }
+
+        /* 动画效果 */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 返回按钮 */
+        .back-button {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .back-button:hover {
+            background: rgba(255, 107, 157, 0.8);
+            transform: translateY(-2px);
+        }
+
+        /* 钱包状态显示 */
+        .wallet-status-info {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 8px 12px;
+            border-radius: 20px;
+            color: white;
+            font-size: 12px;
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .wallet-avatar svg {
+            color: #8b5cf6;
+        }
+
+        .wallet-address {
+            font-family: 'Courier New', monospace;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 8px;
+            border-radius: 5px;
+        }
+
+        .wallet-disconnect {
+            background: rgba(255, 69, 58, 0.8);
+            border: none;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .wallet-disconnect:hover {
+            background: rgba(255, 69, 58, 1);
+        }
+
+        /* 连接钱包按钮 */
+        .connect-wallet-btn {
+            background: linear-gradient(135deg, #9945ff, #14f195);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .connect-wallet-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(153, 69, 255, 0.4);
+        }
+
+        /* 未授权界面 */
+        .unauthorized-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            backdrop-filter: blur(10px);
+        }
+
+        .unauthorized-content {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 400px;
+            color: #333;
+        }
+
+        .unauthorized-content h2 {
+            margin-bottom: 20px;
+            color: #ff6b9d;
+        }
+
+        .unauthorized-content p {
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .connect-wallet-btn {
+            background: linear-gradient(135deg, #9945ff, #14f195);
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .connect-wallet-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(153, 69, 255, 0.4);
+        }
+
+        /* 悬浮聊天框 */
+        .floating-chat {
+            position: fixed;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            width: 416px;
+            height: 754px;
+            background: #F5F3F0;
+            border-radius: 33px;
+            border: 10px solid #2C1810;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4), 
+                        0 0 30px rgba(44, 24, 16, 0.2),
+                        inset 0 2px 0 rgba(255, 255, 255, 0.3);
+            z-index: 1000;
+            cursor: move;
+            user-select: none;
+            overflow: hidden;
+        }
+
+
+        .floating-chat.dragging {
+            transform: translateY(-50%) scale(1.05);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), 
+                        0 0 40px rgba(255, 182, 193, 0.8),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            cursor: grabbing;
+        }
+
+        /* 手机Top Bar风格聊天框头部 */
+        .chat-window-header {
+            border-radius: 23px 23px 0 0;
+            padding: 0;
+            border-bottom: none;
+            display: flex;
+            flex-direction: column;
+            cursor: grab;
+            user-select: none;
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .chat-window-header:active {
+            cursor: grabbing;
+        }
+
+        /* 真实手机状态栏 */
+        .phone-status-bar {
+            background: #000000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 16px;
+            font-size: 14px;
+            color: white;
+            font-weight: 600;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            height: 24px;
+            border-radius: 23px 23px 0 0;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .status-left {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex: 1;
+        }
+
+        .carrier-info {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .network-type {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .status-center {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+        }
+
+        .time-display {
+            font-weight: 700;
+            font-size: 14px;
+            letter-spacing: -0.2px;
+        }
+
+        .status-right {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex: 1;
+            justify-content: flex-end;
+        }
+
+        .status-icon {
+            display: flex;
+            align-items: center;
+        }
+
+        .battery-percentage {
+            font-size: 14px;
+            font-weight: 600;
+            margin-right: 2px;
+        }
+
+        /* 动漫风格聊天标题区域 */
+        .chat-title-area {
+            position: relative;
+            padding: 16px 20px;
+            background: linear-gradient(135deg, 
+                #FF6B9D 0%, 
+                #C44569 25%, 
+                #7B68EE 50%, 
+                #9B59B6 75%, 
+                #E056FD 100%);
+            border-bottom: none;
+            overflow: hidden;
+            width: 100%;
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* 动漫风格背景装饰 */
+        .chat-title-area::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(255, 182, 193, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        /* 动漫风格星星装饰 */
+        .chat-title-area::after {
+            content: '✨🌸✨';
+            position: absolute;
+            top: 8px;
+            right: 20px;
+            font-size: 12px;
+            opacity: 0.7;
+            animation: sparkle 3s ease-in-out infinite;
+        }
+
+        @keyframes sparkle {
+            0%, 100% { opacity: 0.7; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.1); }
+        }
+
+        .chat-user-info {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* 可爱的头像设计 - 使用聊天气泡相同头像 */
+        .chat-user-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: url('profile-pic/alice-pf.png') center/cover;
+            border: 3px solid rgba(255, 255, 255, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            position: relative;
+            box-shadow: 
+                0 4px 15px rgba(255, 182, 193, 0.4),
+                0 2px 8px rgba(0, 0, 0, 0.1),
+                inset 0 2px 0 rgba(255, 255, 255, 0.6);
+            animation: avatarFloat 4s ease-in-out infinite;
+        }
+
+        /* 为不同角色设置标题栏头像 */
+        .character-fliza .chat-user-avatar {
+            background-image: url('profile-pic/fliza-pf.png');
+        }
+
+        .character-alice .chat-user-avatar {
+            background-image: url('profile-pic/alice-pf.png');
+        }
+
+        .character-ash .chat-user-avatar {
+            background-image: url('profile-pic/ash-pf.png');
+        }
+
+        .character-bobo .chat-user-avatar {
+            background-image: url('profile-pic/bobo-pf.png');
+        }
+
+        .character-elinyaa .chat-user-avatar {
+            background-image: url('profile-pic/elinyaa-pf.png');
+        }
+
+        .character-imeris .chat-user-avatar {
+            background-image: url('profile-pic/imeris-pf.png');
+        }
+
+        .character-kyoko .chat-user-avatar {
+            background-image: url('profile-pic/kyoko-pf.png');
+        }
+
+        .character-lena .chat-user-avatar {
+            background-image: url('profile-pic/lena-pf.png');
+        }
+
+        .character-lilium .chat-user-avatar {
+            background-image: url('profile-pic/lilium.png');
+        }
+
+        .character-maple .chat-user-avatar {
+            background-image: url('profile-pic/maple-pf.png');
+        }
+
+        .character-miru .chat-user-avatar {
+            background-image: url('profile-pic/Miru-pf.png');
+        }
+
+        .character-miumiu .chat-user-avatar {
+            background-image: url('profile-pic/miumiu-pf.png');
+        }
+
+        .character-neco .chat-user-avatar {
+            background-image: url('profile-pic/neco-pf.png');
+        }
+
+        .character-nekona .chat-user-avatar {
+            background-image: url('profile-pic/nekona.png');
+        }
+
+        .character-notia .chat-user-avatar {
+            background-image: url('profile-pic/notia-pf.png');
+        }
+
+        .character-ququ .chat-user-avatar {
+            background-image: url('profile-pic/ququ-pf.png');
+        }
+
+        .character-rainy .chat-user-avatar {
+            background-image: url('profile-pic/rainy-pf.png');
+        }
+
+        .character-rindo .chat-user-avatar {
+            background-image: url('profile-pic/rindo-pf.png');
+        }
+
+        .character-sikirei .chat-user-avatar {
+            background-image: url('profile-pic/sikirei-pf.png');
+        }
+
+        .character-vivi .chat-user-avatar {
+            background-image: url('profile-pic/vivi-pf.png');
+        }
+
+        .character-wolf .chat-user-avatar {
+            background-image: url('profile-pic/wolf.png');
+        }
+
+        .character-wolferia .chat-user-avatar {
+            background-image: url('profile-pic/wolferia-pf.png');
+        }
+
+        .character-yawl .chat-user-avatar {
+            background-image: url('profile-pic/yawl-pf.png');
+        }
+
+        .character-yuu .chat-user-avatar {
+            background-image: url('profile-pic/yuu yii-pf.png');
+        }
+
+        .character-zwei .chat-user-avatar {
+            background-image: url('profile-pic/zwei-pf.png');
+        }
+
+        @keyframes avatarFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-2px); }
+        }
+
+        /* 头像周围的光晕 */
+        .chat-user-avatar::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, 
+                transparent, 
+                rgba(255, 255, 255, 0.3), 
+                transparent);
+            animation: haloRotate 6s linear infinite;
+        }
+
+        @keyframes haloRotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .chat-user-details {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .chat-user-name {
+            color: white;
+            font-size: 18px;
+            font-weight: 700;
+            margin: 0;
+            text-shadow: 
+                0 2px 4px rgba(0, 0, 0, 0.3),
+                0 1px 0 rgba(255, 255, 255, 0.2);
+            position: relative;
+        }
+
+        /* 名字前的小装饰 */
+        .chat-user-name::before {
+            content: '💕';
+            margin-right: 6px;
+            font-size: 14px;
+            animation: heartBeat 2s ease-in-out infinite;
+        }
+
+        @keyframes heartBeat {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .chat-user-status {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 13px;
+            margin: 0;
+            font-weight: 500;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* 状态指示器 */
+        .chat-user-status::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4AE54A;
+            box-shadow: 
+                0 0 0 2px rgba(74, 229, 74, 0.3),
+                0 0 8px rgba(74, 229, 74, 0.6);
+            animation: onlinePulse 2s ease-in-out infinite;
+        }
+
+        @keyframes onlinePulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        /* 可爱的动作按钮 */
+        .chat-actions {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 2;
+        }
+
+        .chat-action-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, 
+                rgba(255, 255, 255, 0.25) 0%, 
+                rgba(255, 255, 255, 0.1) 100%);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 按钮的光效 */
+        .chat-action-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(255, 255, 255, 0.4), 
+                transparent);
+            transition: left 0.6s;
+        }
+
+        .chat-action-btn:hover {
+            background: linear-gradient(135deg, 
+                rgba(255, 255, 255, 0.35) 0%, 
+                rgba(255, 255, 255, 0.2) 100%);
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 
+                0 8px 25px rgba(255, 182, 193, 0.4),
+                0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .chat-action-btn:hover::before {
+            left: 100%;
+        }
+
+        .chat-action-btn:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        /* 特殊效果：按钮的小装饰 */
+        .chat-action-btn:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+        .chat-action-btn:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        .chat-action-btn:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        /* 聊天消息区域 */
+        .chat-window-messages {
+            height: 585px;
+            padding: 26px 20px;
+            overflow-y: auto;
+            background: #F5F3F0;
+        }
+
+        .chat-window-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-window-messages::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        .chat-window-messages::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+
+        /* 消息气泡样式 */
+        .message-bubble {
+            margin-bottom: 18px;
+            animation: messageSlideIn 0.4s ease-out;
+        }
+
+        .message-bubble.user {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .message-bubble.ai {
+            display: flex;
+            justify-content: flex-start;
+            align-items: flex-start;
+            margin-bottom: 18px;
+            position: relative;
+            padding-left: 54px;
+        }
+        
+        .message-bubble.ai::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 44px;
+            height: 44px;
+            background: url('profile-pic/alice-pf.png') center/cover;
+            border-radius: 50%;
+            border: 3px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 4px 12px rgba(255, 176, 132, 0.4),
+                        0 2px 6px rgba(0, 0, 0, 0.15),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            z-index: 1;
+        }
+
+        /* 为不同角色设置头像 */
+        .character-fliza .message-bubble.ai::before {
+            background-image: url('profile-pic/fliza-pf.png');
+        }
+
+        .character-alice .message-bubble.ai::before {
+            background-image: url('profile-pic/alice-pf.png');
+        }
+
+        .character-ash .message-bubble.ai::before {
+            background-image: url('profile-pic/ash-pf.png');
+        }
+
+        .character-bobo .message-bubble.ai::before {
+            background-image: url('profile-pic/bobo-pf.png');
+        }
+
+        .character-elinyaa .message-bubble.ai::before {
+            background-image: url('profile-pic/elinyaa-pf.png');
+        }
+
+        .character-imeris .message-bubble.ai::before {
+            background-image: url('profile-pic/imeris-pf.png');
+        }
+
+        .character-kyoko .message-bubble.ai::before {
+            background-image: url('profile-pic/kyoko-pf.png');
+        }
+
+        .character-lena .message-bubble.ai::before {
+            background-image: url('profile-pic/lena-pf.png');
+        }
+
+        .character-lilium .message-bubble.ai::before {
+            background-image: url('profile-pic/lilium.png');
+        }
+
+        .character-maple .message-bubble.ai::before {
+            background-image: url('profile-pic/maple-pf.png');
+        }
+
+        .character-miru .message-bubble.ai::before {
+            background-image: url('profile-pic/Miru-pf.png');
+        }
+
+        .character-miumiu .message-bubble.ai::before {
+            background-image: url('profile-pic/miumiu-pf.png');
+        }
+
+        .character-neco .message-bubble.ai::before {
+            background-image: url('profile-pic/neco-pf.png');
+        }
+
+        .character-nekona .message-bubble.ai::before {
+            background-image: url('profile-pic/nekona.png');
+        }
+
+        .character-notia .message-bubble.ai::before {
+            background-image: url('profile-pic/notia-pf.png');
+        }
+
+        .character-ququ .message-bubble.ai::before {
+            background-image: url('profile-pic/ququ-pf.png');
+        }
+
+        .character-rainy .message-bubble.ai::before {
+            background-image: url('profile-pic/rainy-pf.png');
+        }
+
+        .character-rindo .message-bubble.ai::before {
+            background-image: url('profile-pic/rindo-pf.png');
+        }
+
+        .character-sikirei .message-bubble.ai::before {
+            background-image: url('profile-pic/sikirei-pf.png');
+        }
+
+        .character-vivi .message-bubble.ai::before {
+            background-image: url('profile-pic/vivi-pf.png');
+        }
+
+        .character-wolf .message-bubble.ai::before {
+            background-image: url('profile-pic/wolf.png');
+        }
+
+        .character-wolferia .message-bubble.ai::before {
+            background-image: url('profile-pic/wolferia-pf.png');
+        }
+
+        .character-yawl .message-bubble.ai::before {
+            background-image: url('profile-pic/yawl-pf.png');
+        }
+
+        .character-yuu .message-bubble.ai::before {
+            background-image: url('profile-pic/yuu yii-pf.png');
+        }
+
+        .character-zwei .message-bubble.ai::before {
+            background-image: url('profile-pic/zwei-pf.png');
+        }
+
+        .bubble-container {
+            max-width: 80%;
+            position: relative;
+        }
+
+        .bubble-header {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.9), rgba(255, 182, 193, 0.9));
+            border-radius: 15px 15px 0 0;
+            padding: 6px 12px;
+            font-size: 12px;
+            color: rgba(0, 0, 0, 0.7);
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .bubble-content {
+            background: linear-gradient(135deg, #FFB084 0%, #FF9D6B 50%, #FF8A50 100%);
+            border-radius: 20px 20px 20px 5px;
+            padding: 16px 20px;
+            color: white;
+            font-size: 18px;
+            line-height: 1.5;
+            position: relative;
+            max-width: 300px;
+            word-wrap: break-word;
+            margin: 8px 0;
+            box-shadow: 0 4px 12px rgba(255, 157, 107, 0.3),
+                        0 2px 6px rgba(139, 69, 19, 0.2);
+            border: none;
+            text-shadow: 0 1px 2px rgba(139, 69, 19, 0.3);
+        }
+        
+        .message-bubble.ai .bubble-content::after {
+            content: '';
+            position: absolute;
+            bottom: 0px;
+            left: -8px;
+            width: 0;
+            height: 0;
+            border-right: 12px solid #FF9D6B;
+            border-top: 8px solid transparent;
+            border-bottom: 8px solid transparent;
+            filter: drop-shadow(-2px 2px 4px rgba(139, 69, 19, 0.15));
+        }
+
+        .message-bubble.user .bubble-header {
+            background: #E0E0E0;
+            color: #333;
+        }
+
+        .message-bubble.user .bubble-content {
+            background: linear-gradient(135deg, #F0F0F0 0%, #E0E0E0 50%, #D0D0D0 100%);
+            color: #333;
+            border-radius: 20px 20px 5px 20px;
+            box-shadow: 0 4px 12px rgba(224, 224, 224, 0.4),
+                        0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .message-bubble.user .bubble-content::after {
+            content: '';
+            position: absolute;
+            bottom: 0px;
+            right: -8px;
+            width: 0;
+            height: 0;
+            border-left: 12px solid #E0E0E0;
+            border-top: 8px solid transparent;
+            border-bottom: 8px solid transparent;
+            filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.1));
+        }
+
+
+        .bubble-controls {
+            display: flex;
+            gap: 4px;
+        }
+
+        .bubble-control {
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        /* 聊天输入区域 - 简约精致风格 */
+        .chat-window-input {
+            padding: 12px 16px 16px;
+            background: linear-gradient(180deg, #FAFAFA 0%, #F5F5F5 100%);
+            border-radius: 0 0 23px 23px;
+            border-top: 1px solid rgba(0, 0, 0, 0.08);
+            cursor: auto;
+        }
+
+        .chat-window-messages {
+            cursor: auto;
+        }
+
+        .input-container {
+            display: flex;
+            background: white;
+            border-radius: 24px;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            align-items: center;
+            padding: 4px 4px 4px 16px;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .input-container:focus-within {
+            border-color: rgba(255, 182, 193, 0.5);
+            box-shadow: 0 0 0 3px rgba(255, 182, 193, 0.1),
+                        0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .chat-input-field {
+            flex: 1;
+            padding: 10px 0;
+            border: none;
+            background: transparent;
+            font-size: 16px;
+            outline: none;
+            color: #333;
+            line-height: 1.5;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+        }
+
+        .chat-input-field::placeholder {
+            color: rgba(0, 0, 0, 0.35);
+            font-size: 15px;
+        }
+        
+        .chat-input-field:focus {
+            background: transparent;
+        }
+
+        /* 发送按钮 - 极简纸飞机风格 */
+        .send-btn {
+            background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+            border: none;
+            padding: 0;
+            color: white;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 20px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .send-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            transition: transform 0.3s ease;
+        }
+
+        .send-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .send-btn:hover::before {
+            transform: translate(-50%, -50%) scale(1.2);
+        }
+        
+        .send-btn:active {
+            transform: translateY(0) scale(0.96);
+        }
+
+        /* 发送动画效果 */
+        .send-btn.sending {
+            animation: paperPlane 0.6s ease-out;
+        }
+
+        @keyframes paperPlane {
+            0% {
+                transform: translateY(-1px) scale(1);
+            }
+            50% {
+                transform: translateY(-3px) scale(1.1) rotate(10deg);
+            }
+            100% {
+                transform: translateY(-1px) scale(1) rotate(0deg);
+            }
+        }
+
+        .send-btn.sending svg {
+            animation: planeFly 0.6s ease-out;
+        }
+
+        @keyframes planeFly {
+            0% {
+                transform: translateX(0) rotate(0deg);
+            }
+            50% {
+                transform: translateX(2px) rotate(15deg);
+            }
+            100% {
+                transform: translateX(0) rotate(0deg);
+            }
+        }
+
+        /* 添加额外的功能按钮区域（可选） */
+        .input-extras {
+            display: flex;
+            gap: 8px;
+            margin-right: 8px;
+            align-items: center;
+        }
+
+        .input-extra-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: transparent;
+            border: none;
+            color: rgba(0, 0, 0, 0.4);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            font-size: 16px;
+        }
+
+        .input-extra-btn:hover {
+            background: rgba(0, 0, 0, 0.05);
+            color: rgba(0, 0, 0, 0.7);
+        }
+
+        /* 动画效果 */
+        @keyframes messageSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 1200px) {
+            .floating-chat {
+                width: 525px;
+                height: 675px;
+                right: 15px;
+            }
+            
+            .chat-window-messages {
+                height: 495px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .floating-chat {
+                width: 450px;
+                height: 600px;
+                right: 10px;
+            }
+            
+            .chat-window-messages {
+                height: 420px;
+            }
+        }
+
+        /* VRM状态信息 */
+        .vrm-status {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            color: white;
+            backdrop-filter: blur(10px);
+            font-size: 14px;
+            z-index: 10;
+        }
+
+        /* 左侧控制面板 */
+        .left-panel {
+            position: fixed;
+            left: 20px;
+            bottom: 20px;
+            width: 250px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            z-index: 100;
+        }
+
+        .panel-section {
+            margin-bottom: 20px;
+        }
+
+        .panel-section h4 {
+            color: #ffeaa7;
+            margin-bottom: 10px;
+            font-size: 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 5px;
+        }
+
+        .emotion-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 5px;
+        }
+
+        .emotion-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .emotion-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .emotion-btn.active {
+            background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);
+            color: #2d3436;
+        }
+
+        #character-selector, #animation-selector {
+            width: 100%;
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 12px;
+        }
+
+        .play-animation-btn {
+            width: 100%;
+            margin-top: 10px;
+            padding: 8px;
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .play-animation-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(116, 185, 255, 0.4);
+        }
+
+    </style>
+</head>
+
+<body>
+    <!-- 引入钱包和聊天系统 -->
+    <script src="ai-chat-integration.js"></script>
+    <script src="chat-system-v2.js"></script>
+    <div class="game-container">
+        <!-- 左侧VRM展示区 -->
+        <div class="vrm-container">
+            <canvas id="vrm-canvas" class="vrm-canvas"></canvas>
+            
+            <!-- AI对话气泡 -->
+            <div class="ai-speech-bubble" id="ai-speech-bubble" style="display: none;"></div>
+
+            <!-- VRM状态信息 -->
+            <div class="vrm-status" id="vrm-status" style="display: none;">
+                <div>🎭 VRM状态: <span id="vrm-loaded">加载中...</span></div>
+                <div>🎬 当前动画: <span id="current-animation">无</span></div>
+                <div>😊 表情状态: <span id="current-expression">中性</span></div>
+                <div>🎵 自动眨眼: <span id="auto-blinking">开启</span></div>
+            </div>
+
+
+            <!-- 复古音乐播放器 -->
+            <div class="music-controls" id="music-controls">
+                <div class="music-window-title">
+                    Background Music
+                    <div class="window-controls">
+                        <button class="window-btn minimize-btn"></button>
+                        <button class="window-btn maximize-btn"></button>
+                        <button class="window-btn close-btn"></button>
+                    </div>
+                </div>
+                <div class="music-player-content">
+                    <div class="music-controls-row">
+                        <button class="music-control-btn">⏮</button>
+                        <button class="music-control-btn play-btn" id="music-toggle" onclick="toggleMusic()">⏸</button>
+                        <button class="music-control-btn">⏭</button>
+                    </div>
+                    <div class="volume-control">
+                        <input type="range" class="volume-slider" id="volume-slider" min="0" max="100" value="50"
+                            onchange="adjustVolume(this.value)">
+                        <span class="volume-label" id="volume-label">50</span>
+                    </div>
+                </div>
+            </div>
+            
+
+            <!-- 背景音乐音频元素 -->
+            <audio id="background-music" loop preload="auto">
+                <source src="BG/bgm.mp3" type="audio/mpeg">
+                您的浏览器不支持音频播放。
+            </audio>
+            
+            <!-- 钱包状态显示（已登录时显示） -->
+            <div class="wallet-status-info" id="wallet-status-info" style="display: none;">
+                <div class="wallet-avatar">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 21 21">
+                        <g fill="none" fill-rule="evenodd" transform="translate(3 4)">
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M.5 2.5h12a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-10a2 2 0 0 1-2-2zm1-2h9a1 1 0 0 1 1 1v1H.5v-1a1 1 0 0 1 1-1z"/>
+                            <circle cx="11.5" cy="7.5" r="1" fill="currentColor"/>
+                        </g>
+                    </svg>
+                </div>
+                <span class="wallet-address" id="wallet-address">连接中...</span>
+                <button class="wallet-disconnect" onclick="disconnectWallet()">登出</button>
+            </div>
+
+        </div>
+
+        <!-- 左侧控制面板 -->
+        <div class="left-panel" style="display: none;">
+            <!-- 快捷控制 -->
+            <div class="panel-section">
+                <h4>😊 快捷控制</h4>
+                <div class="emotion-buttons">
+                    <button class="emotion-btn" onclick="setExpression('neutral')">开心</button>
+                    <button class="emotion-btn" onclick="setExpression('happy')">伤心</button>
+                    <button class="emotion-btn" onclick="setExpression('sad')">生气</button>
+                    <button class="emotion-btn" onclick="setExpression('angry')">惊讶</button>
+                    <button class="emotion-btn" onclick="setExpression('surprised')">思考</button>
+                    <button class="emotion-btn" onclick="setExpression('relaxed')">中性</button>
+                </div>
+            </div>
+
+            <!-- 角色选择 -->
+            <div class="panel-section">
+                <h4>👤 角色选择</h4>
+                <select id="character-selector" onchange="changeCharacter()">
+                    <option value="">选择角色...</option>
+                </select>
+            </div>
+
+            <!-- 动画测试 -->
+            <div class="panel-section">
+                <h4>🎭 动画测试</h4>
+                <select id="animation-selector" onchange="">
+                    <option value="">选择动画...</option>
+                </select>
+                <button class="play-animation-btn" onclick="playSelectedAnimation()">播放动画</button>
+            </div>
+
+            <!-- 返回角色选择 -->
+            <button class="back-button" onclick="goToCharacterSelect()">← 返回角色选择</button>
+        </div>
+
+        <!-- 钱包状态显示 -->
+        <div class="wallet-status" id="wallet-status" style="display: none;">
+            <span>钱包:</span>
+            <span class="wallet-address" id="wallet-address"></span>
+            <button class="wallet-disconnect" onclick="disconnectWallet()">断开</button>
+        </div>
+
+
+        <!-- 悬浮聊天框 -->
+        <div class="floating-chat" id="floating-chat">
+            <!-- 手机Top Bar风格聊天框头部 -->
+            <div class="chat-window-header">
+                <!-- 真实手机状态栏 -->
+                <div class="phone-status-bar">
+                    <div class="status-left">
+                        <div class="carrier-info">
+                            <svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor">
+                                <rect x="0" y="8" width="2" height="4" rx="0.5"/>
+                                <rect x="4" y="6" width="2" height="6" rx="0.5"/>
+                                <rect x="8" y="4" width="2" height="8" rx="0.5"/>
+                                <rect x="12" y="2" width="2" height="10" rx="0.5"/>
+                            </svg>
+                            <span>docomo</span>
+                        </div>
+                        <span class="network-type">4G</span>
+                    </div>
+                    <div class="status-center">
+                        <div class="time-display" id="phone-time">1:26</div>
+                    </div>
+                    <div class="status-right">
+                        <span class="status-icon">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z"/>
+                            </svg>
+                        </span>
+                        <span class="status-icon">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M17.81,4.47C17.73,4.47 17.65,4.45 17.58,4.41C15.66,3.42 14,3.42 12.34,4.41C12.26,4.45 12.18,4.47 12.1,4.47C12,4.47 11.93,4.45 11.85,4.41C9.93,3.42 8.27,3.42 6.61,4.41C6.54,4.45 6.46,4.47 6.38,4.47C6.28,4.47 6.21,4.45 6.13,4.41L5.5,4.1C5.32,4 5.1,4.08 5,4.26C4.92,4.44 5,4.66 5.18,4.76L5.81,5.07C5.89,5.11 5.97,5.13 6.05,5.13C6.15,5.13 6.22,5.11 6.3,5.07C7.92,4.08 9.58,4.08 11.2,5.07C11.28,5.11 11.36,5.13 11.44,5.13C11.54,5.13 11.61,5.11 11.69,5.07C13.31,4.08 14.97,4.08 16.59,5.07C16.67,5.11 16.75,5.13 16.83,5.13C16.93,5.13 17,5.11 17.08,5.07L17.71,4.76C17.89,4.66 17.97,4.44 17.89,4.26C17.81,4.08 17.59,4 17.41,4.1L17.81,4.47Z"/>
+                            </svg>
+                        </span>
+                        <span class="status-icon">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M14,20A2,2 0 0,1 12,22A2,2 0 0,1 10,20H14M12,2A7,7 0 0,1 19,9C19,11.38 17.81,13.47 16,14.74V17A1,1 0 0,1 15,18H9A1,1 0 0,1 8,17V14.74C6.19,13.47 5,11.38 5,9A7,7 0 0,1 12,2M9,21H15A1,1 0 0,1 15,22H9A1,1 0 0,1 9,21Z"/>
+                            </svg>
+                        </span>
+                        <span class="battery-percentage">79%</span>
+                        <span class="status-icon">
+                            <svg width="22" height="12" viewBox="0 0 24 12" fill="none">
+                                <rect x="1" y="2" width="20" height="8" rx="2" stroke="currentColor" stroke-width="1"/>
+                                <rect x="2.5" y="3.5" width="16" height="5" rx="1" fill="currentColor"/>
+                                <rect x="22" y="5" width="2" height="2" rx="0.5" fill="currentColor"/>
+                            </svg>
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- 动漫风格聊天标题区域 -->
+                <div class="chat-title-area">
+                    <div class="chat-user-info">
+                        <div class="chat-user-avatar"></div>
+                        <div class="chat-user-details">
+                            <h3 class="chat-user-name" id="character-name">Alice</h3>
+                            <p class="chat-user-status">在线</p>
+                        </div>
+                    </div>
+                    <div class="chat-actions">
+                        <button class="chat-action-btn" title="发送照片">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M21,19V5C21,3.89 20.1,3 19,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19M21,19H5V5H19V19Z"/>
+                                <circle cx="9" cy="9" r="2"/>
+                                <path d="M21,15L18,12L15,15L13,13L5,21H19A2,2 0 0,0 21,19V15Z"/>
+                            </svg>
+                        </button>
+                        <button class="chat-action-btn" title="发送表情">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12,2C13.1,2 14,2.9 14,4C14,5.1 13.1,6 12,6C10.9,6 10,5.1 10,4C10,2.9 10.9,2 12,2M21,9V7L15,1H5C3.89,1 3,1.89 3,3V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V9M19,19H5V19L5,3H13V9H19V19Z"/>
+                                <circle cx="12" cy="12" r="1.5"/>
+                                <circle cx="8" cy="10" r="1"/>
+                                <circle cx="16" cy="10" r="1"/>
+                                <path d="M8.5,14.5C9.5,16.5 14.5,16.5 15.5,14.5"/>
+                            </svg>
+                        </button>
+                        <button class="chat-action-btn" title="心情设定">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12,21.35L10.55,20.03C5.4,15.36 2,12.27 2,8.5 2,5.41 4.42,3 7.5,3C9.24,3 10.91,3.81 12,5.08C13.09,3.81 14.76,3 16.5,3C19.58,3 22,5.41 22,8.5C22,12.27 18.6,15.36 13.45,20.03L12,21.35Z"/>
+                                <circle cx="12" cy="8.5" r="1.5" fill="white"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 聊天消息区域 -->
+            <div class="chat-window-messages" id="chat-window-messages">
+                <!-- 消息将动态添加到这里 -->
+                <div style="display: none;">
+                    <span id="character-name">芙莉莎</span>
+                </div>
+            </div>
+
+            <!-- 聊天输入区域 -->
+            <div class="chat-window-input">
+                <div class="input-container">
+                    <input type="text" class="chat-input-field" id="chat-input-field" placeholder="输入消息..." onkeypress="handleChatKeyPress(event)">
+                    <button class="send-btn" onclick="sendChatMessage()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M2.01 21L23 12L2.01 3L2 10L17 12L2 14L2.01 21Z" fill="currentColor"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 未授权访问提示 -->
+        <div class="unauthorized-overlay" id="unauthorized-overlay" style="display: none;">
+            <div class="unauthorized-content">
+                <h2>🔒 需要钱包验证</h2>
+                <p>请先连接您的Solana钱包才能访问AI女友聊天室。每个钱包地址都会获得独特的个性化体验！</p>
+                <button class="connect-wallet-btn" onclick="redirectToCharacterSelect()">
+                    返回连接钱包
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+                "@pixiv/three-vrm": "https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@2/lib/three-vrm.module.min.js"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm';
+
+        // 官方 Mixamo 到 VRM 骨骼映射
+        const mixamoVRMRigMap = {
+            mixamorigHips: 'hips',
+            mixamorigSpine: 'spine',
+            mixamorigSpine1: 'chest',
+            mixamorigSpine2: 'upperChest',
+            mixamorigNeck: 'neck',
+            mixamorigHead: 'head',
+            mixamorigLeftShoulder: 'leftShoulder',
+            mixamorigLeftArm: 'leftUpperArm',
+            mixamorigLeftForeArm: 'leftLowerArm',
+            mixamorigLeftHand: 'leftHand',
+            mixamorigLeftHandThumb1: 'leftThumbMetacarpal',
+            mixamorigLeftHandThumb2: 'leftThumbProximal',
+            mixamorigLeftHandThumb3: 'leftThumbDistal',
+            mixamorigLeftHandIndex1: 'leftIndexProximal',
+            mixamorigLeftHandIndex2: 'leftIndexIntermediate',
+            mixamorigLeftHandIndex3: 'leftIndexDistal',
+            mixamorigLeftHandMiddle1: 'leftMiddleProximal',
+            mixamorigLeftHandMiddle2: 'leftMiddleIntermediate',
+            mixamorigLeftHandMiddle3: 'leftMiddleDistal',
+            mixamorigLeftHandRing1: 'leftRingProximal',
+            mixamorigLeftHandRing2: 'leftRingIntermediate',
+            mixamorigLeftHandRing3: 'leftRingDistal',
+            mixamorigLeftHandPinky1: 'leftLittleProximal',
+            mixamorigLeftHandPinky2: 'leftLittleIntermediate',
+            mixamorigLeftHandPinky3: 'leftLittleDistal',
+            mixamorigRightShoulder: 'rightShoulder',
+            mixamorigRightArm: 'rightUpperArm',
+            mixamorigRightForeArm: 'rightLowerArm',
+            mixamorigRightHand: 'rightHand',
+            mixamorigRightHandPinky1: 'rightLittleProximal',
+            mixamorigRightHandPinky2: 'rightLittleIntermediate',
+            mixamorigRightHandPinky3: 'rightLittleDistal',
+            mixamorigRightHandRing1: 'rightRingProximal',
+            mixamorigRightHandRing2: 'rightRingIntermediate',
+            mixamorigRightHandRing3: 'rightRingDistal',
+            mixamorigRightHandMiddle1: 'rightMiddleProximal',
+            mixamorigRightHandMiddle2: 'rightMiddleIntermediate',
+            mixamorigRightHandMiddle3: 'rightMiddleDistal',
+            mixamorigRightHandIndex1: 'rightIndexProximal',
+            mixamorigRightHandIndex2: 'rightIndexIntermediate',
+            mixamorigRightHandIndex3: 'rightIndexDistal',
+            mixamorigRightHandThumb1: 'rightThumbMetacarpal',
+            mixamorigRightHandThumb2: 'rightThumbProximal',
+            mixamorigRightHandThumb3: 'rightThumbDistal',
+            mixamorigLeftUpLeg: 'leftUpperLeg',
+            mixamorigLeftLeg: 'leftLowerLeg',
+            mixamorigLeftFoot: 'leftFoot',
+            mixamorigLeftToeBase: 'leftToes',
+            mixamorigRightUpLeg: 'rightUpperLeg',
+            mixamorigRightLeg: 'rightLowerLeg',
+            mixamorigRightFoot: 'rightFoot',
+            mixamorigRightToeBase: 'rightToes',
+        };
+
+        // ActorCore 到 VRM 骨骼映射
+        const actorCoreVRMRigMap = {
+            CC_Base_Hip: 'hips',
+            CC_Base_Waist: 'spine',
+            CC_Base_Spine01: 'chest',
+            CC_Base_Spine02: 'upperChest',
+            CC_Base_NeckTwist01: 'neck',
+            CC_Base_Head: 'head',
+            CC_Base_L_Clavicle: 'leftShoulder',
+            CC_Base_L_Upperarm: 'leftUpperArm',
+            CC_Base_L_Forearm: 'leftLowerArm',
+            CC_Base_L_Hand: 'leftHand',
+            CC_Base_L_Thumb1: 'leftThumbMetacarpal',
+            CC_Base_L_Thumb2: 'leftThumbProximal',
+            CC_Base_L_Thumb3: 'leftThumbDistal',
+            CC_Base_L_Index1: 'leftIndexProximal',
+            CC_Base_L_Index2: 'leftIndexIntermediate',
+            CC_Base_L_Index3: 'leftIndexDistal',
+            CC_Base_L_Mid1: 'leftMiddleProximal',
+            CC_Base_L_Mid2: 'leftMiddleIntermediate',
+            CC_Base_L_Mid3: 'leftMiddleDistal',
+            CC_Base_L_Ring1: 'leftRingProximal',
+            CC_Base_L_Ring2: 'leftRingIntermediate',
+            CC_Base_L_Ring3: 'leftRingDistal',
+            CC_Base_L_Pinky1: 'leftLittleProximal',
+            CC_Base_L_Pinky2: 'leftLittleIntermediate',
+            CC_Base_L_Pinky3: 'leftLittleDistal',
+            CC_Base_R_Clavicle: 'rightShoulder',
+            CC_Base_R_Upperarm: 'rightUpperArm',
+            CC_Base_R_Forearm: 'rightLowerArm',
+            CC_Base_R_Hand: 'rightHand',
+            CC_Base_R_Pinky1: 'rightLittleProximal',
+            CC_Base_R_Pinky2: 'rightLittleIntermediate',
+            CC_Base_R_Pinky3: 'rightLittleDistal',
+            CC_Base_R_Ring1: 'rightRingProximal',
+            CC_Base_R_Ring2: 'rightRingIntermediate',
+            CC_Base_R_Ring3: 'rightRingDistal',
+            CC_Base_R_Mid1: 'rightMiddleProximal',
+            CC_Base_R_Mid2: 'rightMiddleIntermediate',
+            CC_Base_R_Mid3: 'rightMiddleDistal',
+            CC_Base_R_Index1: 'rightIndexProximal',
+            CC_Base_R_Index2: 'rightIndexIntermediate',
+            CC_Base_R_Index3: 'rightIndexDistal',
+            CC_Base_R_Thumb1: 'rightThumbMetacarpal',
+            CC_Base_R_Thumb2: 'rightThumbProximal',
+            CC_Base_R_Thumb3: 'rightThumbDistal',
+            CC_Base_L_Thigh: 'leftUpperLeg',
+            CC_Base_L_Calf: 'leftLowerLeg',
+            CC_Base_L_Foot: 'leftFoot',
+            CC_Base_L_ToeBase: 'leftToes',
+            CC_Base_R_Thigh: 'rightUpperLeg',
+            CC_Base_R_Calf: 'rightLowerLeg',
+            CC_Base_R_Foot: 'rightFoot',
+            CC_Base_R_ToeBase: 'rightToes',
+        };
+
+        // 完整动画映射 - 包含所有mixamo动画和ActorCore动画
+        const animationMap = {
+            // 待机动画
+            'Breathing Idle': 'mixamo animation/Breathing Idle.fbx',
+            'Happy Idle': 'mixamo animation/Happy Idle.fbx',
+            // Mixamo 动画
+            'Acknowledging': 'mixamo animation/Acknowledging.fbx',
+            'Agreeing': 'mixamo animation/Agreeing.fbx',
+            'Agreeing 2': 'mixamo animation/Agreeing 2.fbx',
+            'Angry': 'mixamo animation/Angry.fbx',
+            'Bashful': 'mixamo animation/Bashful.fbx',
+            'Blow A Kiss': 'mixamo animation/Blow A Kiss.fbx',
+            'Cheering': 'mixamo animation/Cheering.fbx',
+            'Clapping': 'mixamo animation/Clapping.fbx',
+            'Crying': 'mixamo animation/Crying.fbx',
+            'Gangnam Style': 'mixamo animation/Gangnam Style.fbx',
+            'Happy': 'mixamo animation/Happy.fbx',
+            'Hard Head Nod': 'mixamo animation/Hard Head Nod.fbx',
+            'Hip Hop Dancing': 'mixamo animation/Hip Hop Dancing.fbx',
+            'Hip Hop Dancing 2': 'mixamo animation/Hip Hop Dancing 2.fbx',
+            'Joyful Jump': 'mixamo animation/Joyful Jump.fbx',
+            'Looking': 'mixamo animation/Looking.fbx',
+            'Rejected': 'mixamo animation/Rejected.fbx',
+            'Rumba Dancing': 'mixamo animation/Rumba Dancing.fbx',
+            'Salute': 'mixamo animation/Salute.fbx',
+            'Spin In Place': 'mixamo animation/Spin In Place.fbx',
+            'Standing Greeting 2': 'mixamo animation/Standing Greeting 2.fbx',
+            'Surprised': 'mixamo animation/Surprised.fbx',
+            'Thankful': 'mixamo animation/Thankful.fbx',
+            'Thinking': 'mixamo animation/Thinking.fbx',
+            'Yawn': 'mixamo animation/Yawn.fbx',
+            // ActorCore 动画
+            'Stand Happy (ActorCore)': 'actorcore animation/stand-happy-f.fbx'
+        };
+
+        // 情感映射保持不变，用于AI自动触发
+        const emotionAnimationMap = {
+            happy: 'mixamo animation/Happy.fbx',
+            sad: 'mixamo animation/Crying.fbx',
+            angry: 'mixamo animation/Angry.fbx',
+            surprised: 'mixamo animation/Surprised.fbx',
+            thinking: 'mixamo animation/Thinking.fbx',
+            greeting: 'mixamo animation/Standing Greeting 2.fbx',
+            agreeing: 'mixamo animation/Agreeing.fbx',
+            rejecting: 'mixamo animation/Rejected.fbx',
+            clapping: 'mixamo animation/Clapping.fbx',
+            cheering: 'mixamo animation/Cheering.fbx',
+            thankful: 'mixamo animation/Thankful.fbx',
+            bashful: 'mixamo animation/Bashful.fbx',
+            neutral: 'mixamo animation/Breathing Idle.fbx',
+            breathing: 'mixamo animation/Breathing Idle.fbx',
+            kiss: 'mixamo animation/Blow A Kiss.fbx',
+            dancing: 'mixamo animation/Hip Hop Dancing.fbx'
+        };
+
+        // 关键词情感映射
+        const keywordEmotionMap = {
+            // 开心相关
+            '开心': 'happy',
+            '高兴': 'happy',
+            '快乐': 'happy',
+            '哈哈': 'happy',
+            '笑': 'happy',
+            '好棒': 'happy',
+            '太好了': 'happy',
+            '喜欢': 'happy',
+            '爱': 'happy',
+            '棒': 'cheering',
+
+            // 伤心相关
+            '伤心': 'sad',
+            '难过': 'sad',
+            '哭': 'sad',
+            '痛苦': 'sad',
+            '失望': 'sad',
+            '沮丧': 'sad',
+
+            // 生气相关
+            '生气': 'angry',
+            '愤怒': 'angry',
+            '讨厌': 'angry',
+            '烦': 'angry',
+            '气死了': 'angry',
+
+            // 惊讶相关
+            '惊讶': 'surprised',
+            '震惊': 'surprised',
+            '不敢相信': 'surprised',
+            '天哪': 'surprised',
+            '哇': 'surprised',
+
+            // 思考相关
+            '想': 'thinking',
+            '思考': 'thinking',
+            '考虑': 'thinking',
+            '嗯': 'thinking',
+
+            // 问候相关
+            '你好': 'greeting',
+            '嗨': 'greeting',
+            '早上好': 'greeting',
+            '晚上好': 'greeting',
+            '再见': 'greeting',
+
+            // 同意相关
+            '好的': 'agreeing',
+            '同意': 'agreeing',
+            '是的': 'agreeing',
+            '对': 'agreeing',
+            '没错': 'agreeing',
+
+            // 拒绝相关
+            '不': 'rejecting',
+            '不要': 'rejecting',
+            '拒绝': 'rejecting',
+            '不行': 'rejecting',
+
+            // 感谢相关
+            '谢谢': 'thankful',
+            '感谢': 'thankful',
+            '谢': 'thankful',
+
+            // 害羞相关
+            '害羞': 'bashful',
+            '不好意思': 'bashful',
+            '脸红': 'bashful',
+
+            // 亲吻相关
+            '亲': 'kiss',
+            '吻': 'kiss',
+            '么么': 'kiss',
+
+            // 跳舞相关
+            '跳舞': 'dancing',
+            '舞蹈': 'dancing',
+            '音乐': 'dancing'
+        };
+
+        // 官方 loadMixamoAnimation 函数
+        function loadMixamoAnimation(url, vrm) {
+            const loader = new FBXLoader();
+            return loader.loadAsync(url).then((asset) => {
+                const clip = THREE.AnimationClip.findByName(asset.animations, 'mixamo.com');
+
+                if (!clip) {
+                    throw new Error('找不到 Mixamo 动画数据');
+                }
+
+                const tracks = [];
+                const restRotationInverse = new THREE.Quaternion();
+                const parentRestWorldRotation = new THREE.Quaternion();
+                const _quatA = new THREE.Quaternion();
+                const _vec3 = new THREE.Vector3();
+
+                const motionHipsHeight = asset.getObjectByName('mixamorigHips').position.y;
+                const vrmHipsHeight = vrm.humanoid.normalizedRestPose.hips.position[1];
+                const hipsPositionScale = vrmHipsHeight / motionHipsHeight;
+
+                clip.tracks.forEach((track) => {
+                    const trackSplitted = track.name.split('.');
+                    const mixamoRigName = trackSplitted[0];
+                    const vrmBoneName = mixamoVRMRigMap[mixamoRigName];
+                    const vrmNodeName = vrm.humanoid?.getNormalizedBoneNode(vrmBoneName)?.name;
+                    const mixamoRigNode = asset.getObjectByName(mixamoRigName);
+
+                    if (vrmNodeName != null) {
+                        const propertyName = trackSplitted[1];
+
+                        mixamoRigNode.getWorldQuaternion(restRotationInverse).invert();
+                        mixamoRigNode.parent.getWorldQuaternion(parentRestWorldRotation);
+
+                        if (track instanceof THREE.QuaternionKeyframeTrack) {
+                            for (let i = 0; i < track.values.length; i += 4) {
+                                const flatQuaternion = track.values.slice(i, i + 4);
+                                _quatA.fromArray(flatQuaternion);
+
+                                _quatA
+                                    .premultiply(parentRestWorldRotation)
+                                    .multiply(restRotationInverse);
+
+                                _quatA.toArray(flatQuaternion);
+                                flatQuaternion.forEach((v, index) => {
+                                    track.values[index + i] = v;
+                                });
+                            }
+
+                            tracks.push(
+                                new THREE.QuaternionKeyframeTrack(
+                                    `${vrmNodeName}.${propertyName}`,
+                                    track.times,
+                                    track.values.map((v, i) => (vrm.meta?.metaVersion === '0' && i % 2 === 0 ? -v : v)),
+                                )
+                            );
+
+                        } else if (track instanceof THREE.VectorKeyframeTrack) {
+                            const value = track.values.map((v, i) =>
+                                (vrm.meta?.metaVersion === '0' && i % 3 !== 1 ? -v : v) * hipsPositionScale
+                            );
+                            tracks.push(new THREE.VectorKeyframeTrack(`${vrmNodeName}.${propertyName}`, track.times, value));
+                        }
+                    }
+                });
+
+                return new THREE.AnimationClip('vrmAnimation', clip.duration, tracks);
+            });
+        }
+
+        // ActorCore 动画加载函数
+        function loadActorCoreAnimation(url, vrm) {
+            const loader = new FBXLoader();
+            return loader.loadAsync(url).then((asset) => {
+                // ActorCore动画通常第一个就是主要动画
+                const clip = asset.animations[0];
+
+                if (!clip) {
+                    throw new Error('找不到 ActorCore 动画数据');
+                }
+
+                const tracks = [];
+                const restRotationInverse = new THREE.Quaternion();
+                const parentRestWorldRotation = new THREE.Quaternion();
+                const _quatA = new THREE.Quaternion();
+                const _vec3 = new THREE.Vector3();
+
+                // 尝试找到ActorCore的Hip骨骼来计算缩放
+                let motionHipsHeight = 100; // 默认值
+                const actorCoreHips = asset.getObjectByName('CC_Base_Hip');
+                if (actorCoreHips) {
+                    motionHipsHeight = actorCoreHips.position.y;
+                }
+
+                const vrmHipsHeight = vrm.humanoid.normalizedRestPose.hips.position[1];
+                const hipsPositionScale = vrmHipsHeight / motionHipsHeight;
+
+                console.log(`🎬 ActorCore动画处理: ${clip.name}, 轨道数量: ${clip.tracks.length}`);
+
+                clip.tracks.forEach((track) => {
+                    const trackSplitted = track.name.split('.');
+                    const actorCoreRigName = trackSplitted[0];
+                    const vrmBoneName = actorCoreVRMRigMap[actorCoreRigName];
+                    const vrmNodeName = vrm.humanoid?.getNormalizedBoneNode(vrmBoneName)?.name;
+                    const actorCoreRigNode = asset.getObjectByName(actorCoreRigName);
+
+                    if (vrmNodeName != null && actorCoreRigNode) {
+                        const propertyName = trackSplitted[1];
+
+                        actorCoreRigNode.getWorldQuaternion(restRotationInverse).invert();
+                        actorCoreRigNode.parent.getWorldQuaternion(parentRestWorldRotation);
+
+                        if (track instanceof THREE.QuaternionKeyframeTrack) {
+                            for (let i = 0; i < track.values.length; i += 4) {
+                                const flatQuaternion = track.values.slice(i, i + 4);
+                                _quatA.fromArray(flatQuaternion);
+
+                                _quatA
+                                    .premultiply(parentRestWorldRotation)
+                                    .multiply(restRotationInverse);
+
+                                _quatA.toArray(flatQuaternion);
+                                flatQuaternion.forEach((v, index) => {
+                                    track.values[index + i] = v;
+                                });
+                            }
+
+                            tracks.push(
+                                new THREE.QuaternionKeyframeTrack(
+                                    `${vrmNodeName}.${propertyName}`,
+                                    track.times,
+                                    track.values.map((v, i) => (vrm.meta?.metaVersion === '0' && i % 2 === 0 ? -v : v)),
+                                )
+                            );
+
+                        } else if (track instanceof THREE.VectorKeyframeTrack) {
+                            const value = track.values.map((v, i) =>
+                                (vrm.meta?.metaVersion === '0' && i % 3 !== 1 ? -v : v) * hipsPositionScale
+                            );
+                            tracks.push(new THREE.VectorKeyframeTrack(`${vrmNodeName}.${propertyName}`, track.times, value));
+                        }
+                    } else if (!vrmBoneName) {
+                        console.log(`⚠️ 未映射的ActorCore骨骼: ${actorCoreRigName}`);
+                    }
+                });
+
+                console.log(`✅ ActorCore动画重定向完成，生成轨道数量: ${tracks.length}`);
+                return new THREE.AnimationClip('actorCoreAnimation', clip.duration, tracks);
+            });
+        }
+
+        // 场景设置
+        const canvas = document.getElementById('vrm-canvas');
+        const renderer = new THREE.WebGLRenderer({
+            canvas: canvas,
+            antialias: true,
+            alpha: false  // 改为 false，确保背景不透明
+        });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.NoToneMapping;  // 不使用色调映射，保持原始颜色
+        renderer.toneMappingExposure = 1.0;  // 标准曝光
+        renderer.outputColorSpace = THREE.SRGBColorSpace;  // 正确的色彩空间
+
+        const camera = new THREE.PerspectiveCamera(30.0, 1, 0.1, 20.0);
+        // 调整相机位置 - 全身视角
+        camera.position.set(0.0, 1.2, 5.0);  // 居中，适中高度，显示全身
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.screenSpacePanning = true;
+        controls.target.set(0.0, 0.5, 0.0);  // 对准角色全身中心
+        controls.update();
+
+        const scene = new THREE.Scene();
+
+        // 先设置临时背景色
+        scene.background = new THREE.Color(0x87CEEB);
+        
+        // 加载背景图片
+        console.log('🎨 开始加载背景图片: BG/chatroom2.png');
+        console.log('🌍 当前URL:', window.location.href);
+        
+        const textureLoader = new THREE.TextureLoader();
+        textureLoader.load(
+            './BG/chatroom2.png',
+            (texture) => {
+                console.log('🎨 背景纹理加载完成:', texture);
+                console.log('📐 纹理尺寸:', texture.image.width, 'x', texture.image.height);
+                
+                // 调整纹理设置以适应全屏
+                texture.minFilter = THREE.LinearFilter;
+                texture.magFilter = THREE.LinearFilter;
+                texture.wrapS = THREE.ClampToEdgeWrapping;
+                texture.wrapT = THREE.ClampToEdgeWrapping;
+                texture.flipY = false; // 防止图片上下颠倒
+                
+                scene.background = texture;
+                console.log('✅ 背景图片设置成功！');
+                
+                // 强制渲染一次
+                if (renderer && scene && camera) {
+                    renderer.render(scene, camera);
+                }
+            },
+            (progress) => {
+                const percent = progress.total ? (progress.loaded / progress.total * 100).toFixed(1) : '?';
+                console.log('📊 背景加载进度:', percent + '%');
+            },
+            (error) => {
+                console.error('⚠️ 背景图片加载失败:', error);
+                console.error('⚠️ 错误详情:', error.message);
+                console.error('⚠️ 完整文件路径:', new URL('BG/chatroom2.png', window.location.href).href);
+                // 保持临时背景色
+            }
+        );
+
+        // 照明 - 参考官方示例优化亮度
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        directionalLight.position.set(1.0, 1.0, 1.0).normalize();
+        directionalLight.castShadow = true;
+        directionalLight.shadow.mapSize.setScalar(1024);
+        scene.add(directionalLight);
+
+        // 添加补充光源提升整体亮度
+        const fillLight = new THREE.DirectionalLight(0xffffff, 0.4);
+        fillLight.position.set(-1.0, 0.5, -1.0).normalize();
+        scene.add(fillLight);
+
+        // 全局变量
+        let currentVrm = null;
+        let currentMixer = null;
+        let footShadow = null;
+
+        // 创建脚底阴影函数 - 参考character-select.html的实现
+        function createFootShadow(vrm) {
+            // 移除之前的阴影（如果存在）
+            if (footShadow) {
+                scene.remove(footShadow);
+                footShadow.geometry.dispose();
+                footShadow.material.dispose();
+            }
+
+            // 创建渐变圆形阴影 - 模仿character-select.html
+            const shadowCanvas = document.createElement('canvas');
+            shadowCanvas.width = 128;
+            shadowCanvas.height = 128;
+            const context = shadowCanvas.getContext('2d');
+            
+            // 创建径向渐变阴影
+            const gradient = context.createRadialGradient(64, 64, 0, 64, 64, 64);
+            gradient.addColorStop(0, 'rgba(0, 0, 0, 0.4)'); // 中心较深
+            gradient.addColorStop(0.5, 'rgba(0, 0, 0, 0.2)'); // 中等透明度
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)'); // 边缘透明
+            
+            context.fillStyle = gradient;
+            context.fillRect(0, 0, 128, 128);
+            
+            const shadowTexture = new THREE.CanvasTexture(shadowCanvas);
+            const shadowGeometry = new THREE.PlaneGeometry(2.2, 2.2);
+            const shadowMaterial = new THREE.MeshBasicMaterial({ 
+                map: shadowTexture,
+                transparent: true,
+                alphaTest: 0.001,
+                depthWrite: false
+            });
+            
+            footShadow = new THREE.Mesh(shadowGeometry, shadowMaterial);
+            footShadow.rotation.x = -Math.PI / 2;
+            footShadow.position.set(0, -0.82, 0); // 直接贴着脚底，与character-select.html一致
+            scene.add(footShadow);
+            
+            console.log('✅ 创建脚底阴影', {
+                position: footShadow.position,
+                size: '2.2x2.2'
+            });
+        }
+
+        // 更新阴影位置函数（用于动画时）
+        function updateFootShadow() {
+            if (!footShadow || !currentVrm) return;
+            
+            // 保持阴影位置固定在脚底
+            footShadow.position.x = currentVrm.scene.position.x || 0;
+            footShadow.position.y = -0.82; // 固定高度，与character-select.html一致
+            footShadow.position.z = currentVrm.scene.position.z || 0;
+        }
+        let currentAction = null;
+        let defaultVrmFile = 'Main VRM/Fliza VRM.vrm'; // 默认VRM文件
+        let currentAnimationUrl = null;
+
+        // 表情和AI控制变量
+        let autoBlinking = true;
+        let blinkTimer = 0;
+        let blinkFrequency = 3.0;
+        let availableExpressions = [];
+        let isBlinking = false;
+        let blinkDuration = 0.15;
+        let aiModeEnabled = true;
+        let currentEmotion = 'neutral';
+        let isTyping = false;
+
+        // 聊天相关变量
+        let chatHistory = [];
+
+        // 音乐控制变量
+        let backgroundMusic = null;
+        let isMusicPlaying = false;
+        let musicVolume = 0.5; // 默认50%音量
+
+        // 表情相关函数
+        function getAvailableExpressions(vrm) {
+            if (!vrm.expressionManager) return [];
+
+            const expressions = [];
+            const presets = ['happy', 'angry', 'sad', 'surprised', 'relaxed', 'blink'];
+
+            presets.forEach(preset => {
+                try {
+                    const expressionName = vrm.expressionManager.getExpressionTrackName(preset);
+                    if (expressionName) {
+                        expressions.push(preset);
+                    }
+                } catch (e) {
+                    // 表情不存在
+                }
+            });
+
+            console.log(`😊 发现可用表情: ${expressions.join(', ')}`);
+            return expressions;
+        }
+
+        function setExpression(expressionName, value) {
+            if (!currentVrm || !currentVrm.expressionManager) return;
+
+            try {
+                currentVrm.expressionManager.setValue(expressionName, value);
+                console.log(`😊 设置表情: ${expressionName} = ${value}`);
+
+                // 更新状态显示
+                if (value > 0.5) {
+                    document.getElementById('current-expression').textContent = getEmotionText(expressionName);
+                }
+            } catch (e) {
+                console.warn(`⚠️ 表情 ${expressionName} 不可用:`, e);
+            }
+        }
+
+        function resetExpressions() {
+            if (!currentVrm || !currentVrm.expressionManager) return;
+
+            availableExpressions.forEach(expr => {
+                if (expr !== 'blink') {
+                    currentVrm.expressionManager.setValue(expr, 0);
+                }
+            });
+
+            document.getElementById('current-expression').textContent = '中性';
+        }
+
+        // 表情测试函数
+        function testShyExpression() {
+            console.log('🧪 测试害羞表情...');
+            console.log('可用表情:', availableExpressions);
+            
+            if (!currentVrm || !currentVrm.expressionManager) {
+                alert('VRM模型还未加载完成！');
+                return;
+            }
+
+            // 重置所有表情
+            resetExpressions();
+            
+            // 尝试多种害羞相关的表情
+            const shyExpressions = ['shy', 'embarrassed', 'blush', 'surprised', 'sad'];
+            let appliedExpression = null;
+            
+            shyExpressions.forEach(expr => {
+                if (availableExpressions.includes(expr)) {
+                    setExpression(expr, 1.0);
+                    appliedExpression = expr;
+                    console.log(`✅ 应用表情: ${expr}`);
+                }
+            });
+            
+            if (appliedExpression) {
+                document.getElementById('current-expression').textContent = `害羞 (${appliedExpression})`;
+                // 5秒后恢复
+                setTimeout(() => {
+                    resetExpressions();
+                }, 5000);
+            } else {
+                alert('当前VRM模型不支持害羞表情 😔\n可用表情: ' + availableExpressions.join(', '));
+            }
+        }
+
+        function testHappyExpression() {
+            console.log('🧪 测试开心表情...');
+            
+            if (!currentVrm || !currentVrm.expressionManager) {
+                alert('VRM模型还未加载完成！');
+                return;
+            }
+
+            resetExpressions();
+            
+            if (availableExpressions.includes('happy')) {
+                setExpression('happy', 1.0);
+                document.getElementById('current-expression').textContent = '开心';
+                setTimeout(() => resetExpressions(), 3000);
+            } else {
+                alert('当前VRM模型不支持开心表情');
+            }
+        }
+
+        function testSadExpression() {
+            console.log('🧪 测试难过表情...');
+            
+            if (!currentVrm || !currentVrm.expressionManager) {
+                alert('VRM模型还未加载完成！');
+                return;
+            }
+
+            resetExpressions();
+            
+            if (availableExpressions.includes('sad')) {
+                setExpression('sad', 1.0);
+                document.getElementById('current-expression').textContent = '难过';
+                setTimeout(() => resetExpressions(), 3000);
+            } else {
+                alert('当前VRM模型不支持难过表情');
+            }
+        }
+
+        function resetAllExpressions() {
+            console.log('🧪 重置所有表情...');
+            resetExpressions();
+        }
+
+        function performBlink() {
+            if (!currentVrm || !availableExpressions.includes('blink') || isBlinking) return;
+
+            isBlinking = true;
+            const startTime = performance.now();
+
+            function animateBlink() {
+                const elapsed = (performance.now() - startTime) / 1000;
+                const progress = elapsed / blinkDuration;
+
+                if (progress < 0.5) {
+                    const blinkValue = Math.sin(progress * Math.PI * 2) * 0.5 + 0.5;
+                    setExpression('blink', blinkValue);
+                } else if (progress < 1.0) {
+                    const blinkValue = Math.sin((1 - progress) * Math.PI * 2) * 0.5 + 0.5;
+                    setExpression('blink', blinkValue);
+                } else {
+                    setExpression('blink', 0);
+                    isBlinking = false;
+                    return;
+                }
+
+                requestAnimationFrame(animateBlink);
+            }
+
+            animateBlink();
+        }
+
+        // 动画加载函数
+        // 待机动画相关变量
+        let idleAnimationUrl = 'mixamo animation/Breathing Idle.fbx';
+        let idleAction = null;
+        let returnToIdleTimer = null;
+        
+        async function loadAnimation(animationUrl, emotionName = null) {
+            if (!currentVrm) return;
+
+            try {
+                // 清除之前的返回待机计时器
+                if (returnToIdleTimer) {
+                    clearTimeout(returnToIdleTimer);
+                    returnToIdleTimer = null;
+                }
+                
+                currentAnimationUrl = animationUrl;
+
+                // 判断是否是待机动画
+                const isIdleAnimation = animationUrl === idleAnimationUrl || animationUrl.includes('Breathing Idle');
+                
+                // 判断是ActorCore还是Mixamo动画
+                const isActorCore = animationUrl.includes('actorcore animation');
+                const clip = isActorCore ?
+                    await loadActorCoreAnimation(animationUrl, currentVrm) :
+                    await loadMixamoAnimation(animationUrl, currentVrm);
+
+                if (currentMixer) {
+                    const newAction = currentMixer.clipAction(clip);
+                    newAction.reset().play();
+                    newAction.timeScale = 1.0;
+                    
+                    // 如果是待机动画，设置为循环
+                    if (isIdleAnimation) {
+                        newAction.loop = THREE.LoopRepeat;
+                        idleAction = newAction;
+                    } else {
+                        // 非待机动画设置为播放一次
+                        newAction.loop = THREE.LoopOnce;
+                        newAction.clampWhenFinished = true;
+                    }
+
+                    if (currentAction && currentAction !== newAction) {
+                        currentAction.crossFadeTo(newAction, 1.0, false);
+                    }
+
+                    currentAction = newAction;
+                    
+                    // 如果不是待机动画，设置定时器返回待机
+                    if (!isIdleAnimation) {
+                        // 获取动画时长，动画结束后返回待机
+                        const animationDuration = clip.duration * 1000; // 转换为毫秒
+                        returnToIdleTimer = setTimeout(() => {
+                            console.log('🔄 返回待机动画');
+                            loadAnimation(idleAnimationUrl);
+                        }, animationDuration + 500); // 动画结束后0.5秒返回待机
+                    }
+                }
+
+                // 更新状态显示
+                const animationName = animationUrl.split('/').pop().split('.')[0];
+                document.getElementById('current-animation').textContent = animationName;
+
+                if (emotionName) {
+                    currentEmotion = emotionName;
+                    // 同时设置表情
+                    if (availableExpressions.includes(emotionName)) {
+                        setExpression(emotionName, 1.0);
+                        setTimeout(() => {
+                            setExpression(emotionName, 0);
+                        }, 2000);
+                    }
+                }
+
+                console.log(`🎬 动画加载成功: ${animationName} (${isActorCore ? 'ActorCore' : 'Mixamo'})`);
+
+            } catch (error) {
+                console.error('❌ 动画加载失败:', error);
+            }
+        }
+
+        // VRM 角色列表
+        const vrmCharacters = {
+            'Fliza VRM': 'Main VRM/Fliza VRM.vrm',
+            'QuQu_U': 'Main VRM/QuQu_U.vrm',
+            'Ash1.0': 'Main VRM/Ash1.0.vrm',
+            'CH_001_imiut': 'Main VRM/CH_001_imiut_v1.01.vrm',
+            'CH_007_unkt': 'Main VRM/CH_007_unkt_off_bonnet_v1_00.vrm',
+            'Elinyaa': 'Main VRM/Elinyaa.vrm',
+            'IMERIS': 'Main VRM/IMERIS.vrm',
+            'Lena': 'Main VRM/Lena_ver1.02(VRM).vrm',
+            'Lilium': 'Main VRM/Lilium_ver1.01 (VRM).vrm',
+            'M_CH_06_Shiratori': 'Main VRM/M_CH_06_Shiratori_v1.00.vrm',
+            'Maple': 'Main VRM/Maple_1.0.vrm',
+            'NEKONA': 'Main VRM/NEKONA.01.vrm',
+            'NecoMaid_Premium': 'Main VRM/NecoMaid_Premium.vrm',
+            'RINDO_Full': 'Main VRM/RINDO_Full.vrm',
+            'Rainy': 'Main VRM/Rainy_1.00.vrm',
+            'RearAlice': 'Main VRM/RearAlice_1.0.vrm',
+            'Vivi_model': 'Main VRM/Vivi_model.vrm',
+            'Wolf': 'Main VRM/Wolf_ver1.00(VRM).vrm',
+            'Wolferia': 'Main VRM/Wolferia.vrm',
+            'YM_CH_03_Notia': 'Main VRM/YM_CH_03_Notia_v1.01.vrm',
+            'Yawl_Dress': 'Main VRM/Yawl_Dress.vrm',
+            'Yuu uwaginasi': 'Main VRM/Yuu uwaginasi.vrm',
+            'Yuu': 'Main VRM/Yuu.vrm',
+            'kyoko': 'Main VRM/kyoko.vrm',
+            'miru': 'Main VRM/miru.vrm',
+            'sikirei_Rei': 'Main VRM/sikirei_Rei_VRM.vrm'
+        };
+
+        let currentCharacterName = 'Fliza VRM';
+
+        // VRM 加载函数
+        function loadVRM(characterName = null) {
+            let vrmPath;
+            
+            if (characterName) {
+                vrmPath = vrmCharacters[characterName];
+                if (!vrmPath) {
+                    console.error('❌ 角色不存在:', characterName);
+                    return;
+                }
+            } else {
+                // 使用默认或选择的角色文件
+                vrmPath = defaultVrmFile;
+                // 从localStorage获取选中的角色信息
+                const selectedCharacterData = localStorage.getItem('selectedCharacter');
+                if (selectedCharacterData) {
+                    const character = JSON.parse(selectedCharacterData);
+                    characterName = character.name || '芙莉莎';
+                } else {
+                    characterName = '芙莉莎';
+                }
+            }
+
+            console.log('🎮 VRM加载调试信息:');
+            console.log('- characterName:', characterName);
+            console.log('- vrmPath:', vrmPath);
+            console.log('- defaultVrmFile:', defaultVrmFile);
+
+            if (!vrmPath) {
+                console.error('❌ VRM文件路径为空，无法加载');
+                updateVRMStatus('加载失败: 文件路径为空');
+                return;
+            }
+
+            currentCharacterName = characterName;
+            updateVRMStatus('加载中...');
+
+            const loader = new GLTFLoader();
+            loader.crossOrigin = 'anonymous';
+
+            // 不使用helperRoot，与character-select.html保持一致
+            loader.register((parser) => {
+                return new VRMLoaderPlugin(parser);
+            });
+
+            loader.load(
+                vrmPath,
+                (gltf) => {
+                    console.log('🎉 VRM文件加载成功!', gltf);
+                    const vrm = gltf.userData.vrm;
+                    console.log('📦 VRM对象:', vrm);
+
+                    // 使用VRM v2兼容的优化方法
+                    VRMUtils.removeUnnecessaryVertices(gltf.scene);
+                    // VRMUtils.combineSkeletons 在 v2 中已移除
+                    // VRMUtils.combineMorphs 在 v2 中已移除
+
+                    if (currentVrm) {
+                        scene.remove(currentVrm.scene);
+                        VRMUtils.deepDispose(currentVrm.scene);
+                    }
+                    
+                    // 清理之前的阴影
+                    if (footShadow) {
+                        scene.remove(footShadow);
+                        footShadow.geometry.dispose();
+                        footShadow.material.dispose();
+                        footShadow = null;
+                    }
+
+                    currentVrm = vrm;
+                    scene.add(vrm.scene);
+
+                    // VRM模型大小和位置设置 - 与character-select.html一致
+                    vrm.scene.scale.set(1.45, 1.45, 1.45);  // 与选角页面相同的放大比例
+
+                    // 将VRM模型位置向下移动，更贴近底部边界
+                    vrm.scene.position.y = -0.8;  // 与选角页面相同的位置
+                    
+                    // 创建脚底阴影
+                    createFootShadow(vrm);
+
+                    currentMixer = new THREE.AnimationMixer(currentVrm.scene);
+
+                    vrm.scene.traverse((obj) => {
+                        obj.frustumCulled = false;
+                    });
+
+                    // VRMUtils.rotateVRM0 在 v2 中可能不需要或已更改
+                    try {
+                        VRMUtils.rotateVRM0(vrm);
+                    } catch (error) {
+                        console.log('⚠️ VRMUtils.rotateVRM0 不可用，跳过 (VRM v2兼容)');
+                    }
+
+                    availableExpressions = getAvailableExpressions(vrm);
+                    
+                    // 更新全局变量
+                    window.currentVrm = currentVrm;
+                    window.availableExpressions = availableExpressions;
+
+                    updateVRMStatus('✅ 已加载');
+                    
+                    // 更新角色名称显示
+                    const characterNameElement = document.getElementById('character-name');
+                    if (characterNameElement) {
+                        characterNameElement.textContent = characterName;
+                    }
+
+                    // 默认播放待机动画
+                    loadAnimation(idleAnimationUrl);
+
+                    console.log('🎭 VRM 加载完成:', vrm);
+                    
+                    // 初始化AI聊天系统
+                    onVRMLoadComplete(currentCharacterName, vrmPath);
+                },
+                (progress) => {
+                    const percent = (100.0 * (progress.loaded / progress.total)).toFixed(1);
+                    console.log(`📊 VRM加载进度: ${percent}%`, progress);
+                    updateVRMStatus(`加载中... ${percent}%`);
+                },
+                (error) => {
+                    console.error('❌ VRM 加载失败:', error);
+                    console.error('❌ 错误详情:', error.message, error.stack);
+                    console.error('❌ 尝试加载的文件路径:', vrmPath);
+                    console.error('❌ 当前工作目录:', window.location.href);
+                    updateVRMStatus(`❌ 加载失败: ${error.message || error}`);
+                }
+            );
+        }
+
+        // 状态更新函数
+        function updateVRMStatus(status) {
+            document.getElementById('vrm-loaded').textContent = status;
+        }
+
+        function getEmotionText(emotion) {
+            const emotionMap = {
+                happy: '开心',
+                sad: '伤心',
+                angry: '生气',
+                surprised: '惊讶',
+                thinking: '思考',
+                neutral: '中性',
+                bashful: '害羞'
+            };
+            return emotionMap[emotion] || '中性';
+        }
+
+        // AI 聊天函数
+        function analyzeMessage(message) {
+            // 简单的关键词情感分析
+            for (const [keyword, emotion] of Object.entries(keywordEmotionMap)) {
+                if (message.includes(keyword)) {
+                    return emotion;
+                }
+            }
+            return 'neutral';
+        }
+
+        function generateAIResponse(userMessage) {
+            // 简单的AI回复系统（可以后续接入真正的AI API）
+            const responses = {
+                greeting: [
+                    "你好！很高兴见到你~ 💕",
+                    "嗨！今天过得怎么样呀？",
+                    "欢迎回来！我等你很久了呢~"
+                ],
+                happy: [
+                    "哇！你看起来很开心呢！我也很高兴~ 😊",
+                    "太好了！你的快乐也感染了我呢！",
+                    "看到你开心，我也忍不住想要跳舞呢！"
+                ],
+                sad: [
+                    "不要难过啦，我会一直陪着你的... 😢",
+                    "虽然现在很难过，但一切都会好起来的！",
+                    "来，让我给你一个拥抱吧~"
+                ],
+                angry: [
+                    "别生气了嘛，深呼吸一下~ 😤",
+                    "我知道你很生气，但是生气会伤身体的哦",
+                    "告诉我发生什么事了，我来帮你想办法！"
+                ],
+                surprised: [
+                    "真的吗？！太令人惊讶了！😲",
+                    "哇！没想到会这样呢！",
+                    "这真是出乎意料啊！"
+                ],
+                thinking: [
+                    "嗯...让我想想呢... 🤔",
+                    "这确实是个值得思考的问题呢",
+                    "你说得对，我也在想这个问题"
+                ],
+                love: [
+                    "我也喜欢你呀~ 💕",
+                    "真的吗？我好开心！",
+                    "你这样说我会脸红的啦~"
+                ],
+                default: [
+                    "嗯嗯，我明白了~",
+                    "是这样啊，很有趣呢！",
+                    "你说得很有道理呢~",
+                    "我也是这么想的！",
+                    "那你觉得呢？"
+                ]
+            };
+
+            // 检测特殊关键词
+            if (userMessage.includes('爱') || userMessage.includes('喜欢你')) {
+                return responses.love[Math.floor(Math.random() * responses.love.length)];
+            }
+
+            const emotion = analyzeMessage(userMessage);
+            const responseArray = responses[emotion] || responses.default;
+            return responseArray[Math.floor(Math.random() * responseArray.length)];
+        }
+
+        // 聊天UI函数
+        function addMessage(content, isUser = false, messageId = null) {
+            const messagesContainer = document.getElementById('chat-window-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message-bubble ${isUser ? 'user' : 'ai'}`;
+
+            // 添加消息ID以便流式更新
+            if (messageId) {
+                messageDiv.setAttribute('data-message-id', messageId);
+            }
+
+            const currentTime = new Date().toLocaleTimeString('zh-CN', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            const characterName = document.getElementById('character-name').textContent || '芙莉莎';
+            const userName = '用户';
+
+            messageDiv.innerHTML = `
+                <div class="bubble-content">${content}</div>
+            `;
+
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            // 如果是AI的消息，显示对话气泡
+            if (!isUser) {
+                showSpeechBubble(content);
+            }
+        }
+        
+        // 更新流式消息内容
+        function updateStreamingMessageUI(messageId, content) {
+            const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+            if (messageElement) {
+                const bubbleContent = messageElement.querySelector('.bubble-content');
+                if (bubbleContent) {
+                    bubbleContent.textContent = content;
+                    
+                    // 添加打字效果的光标
+                    if (!content.endsWith('|')) {
+                        bubbleContent.textContent += '|';
+                        setTimeout(() => {
+                            if (bubbleContent.textContent.endsWith('|')) {
+                                bubbleContent.textContent = content;
+                            }
+                        }, 500);
+                    }
+                    
+                    // 保持滚动到底部
+                    const messagesContainer = document.getElementById('chat-window-messages');
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    
+                    // 只更新对话气泡的文本，不重启动画
+                    updateSpeechBubbleContent(content);
+                }
+            }
+        }
+        
+        // 语音气泡状态管理
+        let speechBubbleState = {
+            isActive: false,
+            currentAnimation: null,
+            timeoutId: null
+        };
+        
+        // 显示AI对话气泡
+        function showSpeechBubble(text) {
+            const bubble = document.getElementById('ai-speech-bubble');
+            
+            // 清除之前的状态
+            if (speechBubbleState.timeoutId) {
+                clearTimeout(speechBubbleState.timeoutId);
+            }
+            
+            bubble.style.display = 'block';
+            bubble.style.animation = 'bubbleFadeIn 0.5s forwards';
+            speechBubbleState.isActive = true;
+            
+            // 打字机效果 - 逐字显示
+            let currentIndex = 0;
+            bubble.textContent = '';
+            
+            function typeText() {
+                if (currentIndex < text.length && speechBubbleState.isActive) {
+                    bubble.textContent += text[currentIndex];
+                    currentIndex++;
+                    speechBubbleState.timeoutId = setTimeout(typeText, 100);
+                } else if (speechBubbleState.isActive) {
+                    // 文字显示完毕后，停留更长时间
+                    const displayTime = Math.max(5000, text.length * 200);
+                    
+                    console.log(`💬 字幕气泡显示时间: ${displayTime}ms (文本长度: ${text.length}字)`);
+                    
+                    speechBubbleState.timeoutId = setTimeout(() => {
+                        if (speechBubbleState.isActive) {
+                            bubble.style.animation = 'bubbleFadeOut 1s forwards';
+                            speechBubbleState.timeoutId = setTimeout(() => {
+                                bubble.style.display = 'none';
+                                speechBubbleState.isActive = false;
+                            }, 1000);
+                        }
+                    }, displayTime);
+                }
+            }
+            
+            // 开始打字效果
+            speechBubbleState.timeoutId = setTimeout(typeText, 200); // 气泡出现后200ms开始打字
+        }
+        
+        // 语音气泡流式更新状态
+        let bubbleStreamingState = {
+            isStreaming: false,
+            pendingText: '',
+            streamStartTime: null
+        };
+        
+        // 更新对话气泡内容（流式更新时使用，不重启动画）
+        function updateSpeechBubbleContent(text) {
+            // 标记为流式更新状态
+            if (!bubbleStreamingState.isStreaming) {
+                bubbleStreamingState.isStreaming = true;
+                bubbleStreamingState.streamStartTime = Date.now();
+                console.log('🎬 开始流式语音气泡更新');
+            }
+            
+            // 保存最新的完整文本
+            bubbleStreamingState.pendingText = text;
+            
+            // 设置延迟显示，避免频繁更新
+            if (bubbleStreamingState.timeoutId) {
+                clearTimeout(bubbleStreamingState.timeoutId);
+            }
+            
+            bubbleStreamingState.timeoutId = setTimeout(() => {
+                // 如果还在流式更新中，检查是否应该显示
+                const timeSinceStart = Date.now() - bubbleStreamingState.streamStartTime;
+                
+                // 如果流式更新已经停止了500ms以上，认为已完成
+                if (timeSinceStart > 500) {
+                    console.log('✨ 流式更新完成，显示最终语音气泡');
+                    bubbleStreamingState.isStreaming = false;
+                    showSpeechBubble(bubbleStreamingState.pendingText);
+                }
+            }, 500); // 延迟500ms等待流式更新完成
+        }
+
+
+        async function sendMessage() {
+            // 验证用户是否已认证
+            if (!walletAuth.isAuthenticated) {
+                console.error('❌ 用户未认证，无法发送消息');
+                walletAuth.showUnauthorizedOverlay();
+                return;
+            }
+
+            const input = document.getElementById('chat-input-field');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            // 获取当前用户和角色信息
+            const userId = walletAuth.getCurrentUserId();
+            const character = walletAuth.getCurrentCharacter();
+
+            console.log(`💬 发送消息: ${message} (用户: ${walletAuth.formatAddress(userId)}, 角色: ${character.name})`);
+
+            // 清空输入框
+            input.value = '';
+
+            // 分析情感并触发动画
+            if (aiModeEnabled) {
+                const emotion = analyzeMessage(message);
+                if (emotion !== 'neutral') {
+                    triggerEmotion(emotion);
+                }
+            }
+
+            try {
+                // 优先使用 OpenAI 集成的 ChatSystem V2
+                if (window.chatSystemV2 && window.aiChatIntegration) {
+                    console.log('🤖 使用 OpenAI ChatSystem V2 发送消息');
+                    
+                    // 确保 ChatSystem V2 有正确的用户和角色设置
+                    if (!window.chatSystemV2.currentUser) {
+                        // 模拟用户对象，让 ChatSystem V2 认为用户已登录
+                        window.chatSystemV2.currentUser = {
+                            id: userId,
+                            nickname: `用户${userId.slice(-4)}`,
+                            walletAddress: userId
+                        };
+                        window.chatSystemV2.waitingForWallet = false;
+                        console.log('👤 设置 ChatSystem V2 用户:', window.chatSystemV2.currentUser.nickname);
+                    }
+                    
+                    // 确保 ChatSystem V2 有正确的角色设置
+                    if (!window.chatSystemV2.currentCharacter && selectedCharacter) {
+                        console.log('🎭 设置 ChatSystem V2 角色:', selectedCharacter.name);
+                        window.chatSystemV2.setCharacter(selectedCharacter);
+                    }
+                    
+                    // 双重检查：如果还是没有角色，使用当前角色数据
+                    if (!window.chatSystemV2.currentCharacter) {
+                        const characterData = {
+                            name: character.name,
+                            id: character.id || character.name.toLowerCase(),
+                            personality: character.personality,
+                            ...character
+                        };
+                        console.log('🎭 使用当前角色数据设置 ChatSystem V2:', characterData.name);
+                        window.chatSystemV2.setCharacter(characterData);
+                    }
+                    
+                    // 使用 ChatSystem V2 发送消息（包含 OpenAI 集成）
+                    await window.chatSystemV2.sendMessage(message);
+                    
+                    // ChatSystem V2 会处理消息显示和历史记录
+                    console.log('✅ OpenAI 消息发送完成');
+                    
+                } else {
+                    // 降级到旧系统
+                    console.log('⚠️ 降级到旧的预设回复系统');
+                    let response;
+                    
+                    // 如果记忆系统已初始化，使用增强的AI回复
+                    if (window.memorySystem && window.memorySystem.initialized) {
+                        // 1. 检索记忆上下文
+                        const memoryContext = await window.memorySystem.retrieveMemoryContext(userId, character.id, message);
+                        
+                        // 2. 构建增强的AI上下文
+                        const npcPersona = getNPCPersona(character.id);
+                        const contextPrompt = window.memorySystem.buildContextForAI(memoryContext, npcPersona);
+                        
+                        // 3. 生成带记忆的AI回复
+                        response = await generateAIResponseWithMemory(message, contextPrompt);
+                    } else {
+                        // 最后降级到简单AI回复
+                        response = generateAIResponse(message);
+                    }
+
+                    // 添加AI回复
+                    addMessage(response, false);
+
+                    // 分析AI回复并可能触发额外动画
+                    const aiEmotion = analyzeMessage(response);
+                    if (aiEmotion !== 'neutral' && aiModeEnabled) {
+                        setTimeout(() => triggerEmotion(aiEmotion), 500);
+                    }
+
+                    // 保存对话到记忆系统
+                    if (window.memorySystem && window.memorySystem.initialized) {
+                        await window.memorySystem.processConversationMemories(userId, character.id, message, response);
+                    } else {
+                        // 降级保存到localStorage
+                        saveChatHistory(userId, character.id, message, response);
+                    }
+                }
+
+            } catch (error) {
+                console.error('❌ 发送消息失败:', error);
+                
+                // 最终降级处理
+                setTimeout(() => {
+                    const response = generateAIResponse(message);
+                    addMessage(response, false);
+                    saveChatHistory(userId, character.id, message, response);
+                }, 1000 + Math.random() * 2000);
+            }
+        }
+
+        // 保存聊天记录（简单版本）
+        function saveChatHistory(userId, characterId, userMessage, aiResponse) {
+            try {
+                const historyKey = `chat_history_${userId}_${characterId}`;
+                let history = JSON.parse(localStorage.getItem(historyKey) || '[]');
+                
+                // 添加新的对话
+                history.push({
+                    timestamp: new Date().toISOString(),
+                    user: userMessage,
+                    ai: aiResponse
+                });
+                
+                // 只保留最近50条对话
+                if (history.length > 50) {
+                    history = history.slice(-50);
+                }
+                
+                localStorage.setItem(historyKey, JSON.stringify(history));
+                console.log('💾 聊天记录已保存');
+                
+            } catch (error) {
+                console.error('保存聊天记录失败:', error);
+            }
+        }
+
+        function sendChatMessage() {
+            sendMessage();
+        }
+
+        function handleChatKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // 情感触发函数
+        function triggerEmotion(emotion) {
+            if (!currentVrm) return;
+
+            console.log(`🎭 触发情感: ${emotion}`);
+
+            // 重置按钮状态
+            document.querySelectorAll('.emotion-btn').forEach(btn => btn.classList.remove('active'));
+
+            // 激活对应按钮
+            const emotionBtns = document.querySelectorAll('.emotion-btn');
+            emotionBtns.forEach(btn => {
+                if (btn.textContent.includes(getEmotionText(emotion))) {
+                    btn.classList.add('active');
+                }
+            });
+
+            if (emotion === 'neutral') {
+                resetExpressions();
+                loadAnimation(idleAnimationUrl);
+                return;
+            }
+
+            // 加载对应动画
+            if (emotionAnimationMap[emotion]) {
+                loadAnimation(emotionAnimationMap[emotion], emotion);
+            }
+
+            // 设置表情
+            if (availableExpressions.includes(emotion)) {
+                resetExpressions();
+                setExpression(emotion, 1.0);
+
+                // 3秒后恢复中性表情
+                setTimeout(() => {
+                    setExpression(emotion, 0);
+                    document.getElementById('current-expression').textContent = '中性';
+                }, 3000);
+            }
+        }
+
+        function toggleAutoMode() {
+            aiModeEnabled = !aiModeEnabled;
+            document.getElementById('ai-mode-status').textContent = aiModeEnabled ? '开启' : '关闭';
+            document.getElementById('ai-status').innerHTML = aiModeEnabled ?
+                '<span class="online-indicator"></span>AI智能模式' :
+                '<span class="online-indicator"></span>手动模式';
+        }
+
+        function toggleDebugMode() {
+            helperRoot.visible = !helperRoot.visible;
+            console.log(`🦴 骨骼调试模式: ${helperRoot.visible ? '开启' : '关闭'}`);
+        }
+
+        // 音乐控制函数
+        function initBackgroundMusic() {
+            backgroundMusic = document.getElementById('background-music');
+
+            if (backgroundMusic) {
+                backgroundMusic.volume = musicVolume;
+
+                // 音乐加载成功事件
+                backgroundMusic.addEventListener('canplaythrough', () => {
+                    console.log('🎵 背景音乐加载完成');
+                });
+
+                // 音乐加载错误事件
+                backgroundMusic.addEventListener('error', (e) => {
+                    console.warn('⚠️ 背景音乐加载失败:', e);
+                    document.getElementById('music-controls').style.display = 'none';
+                });
+
+                // 尝试自动播放
+                playBackgroundMusic();
+            }
+        }
+
+        function playBackgroundMusic() {
+            if (backgroundMusic) {
+                backgroundMusic.play().then(() => {
+                    isMusicPlaying = true;
+                    updateMusicButton();
+                    console.log('🎵 背景音乐开始播放');
+                    // 移除固定的背景音乐消息
+                }).catch(error => {
+                    console.log('🎵 自动播放被浏览器阻止，需要用户交互后播放');
+                    isMusicPlaying = false;
+                    updateMusicButton();
+                    // 在聊天中显示音乐提示
+                    setTimeout(() => {
+                        addMessage('🎵 点击右上角音乐按钮开启温馨的背景音乐吧~ 💕', false);
+                    }, 2000);
+                });
+            }
+        }
+
+        function toggleMusic() {
+            if (!backgroundMusic) return;
+
+            if (isMusicPlaying) {
+                backgroundMusic.pause();
+                isMusicPlaying = false;
+            } else {
+                backgroundMusic.play().then(() => {
+                    isMusicPlaying = true;
+                }).catch(error => {
+                    console.error('🎵 音乐播放失败:', error);
+                });
+            }
+            updateMusicButton();
+        }
+
+        function adjustVolume(value) {
+            musicVolume = value / 100;
+            if (backgroundMusic) {
+                backgroundMusic.volume = musicVolume;
+            }
+            document.getElementById('volume-label').textContent = value + '%';
+
+            // 根据音量更新音量图标
+            const volumeIcon = document.querySelector('.volume-control span');
+            if (value == 0) {
+                volumeIcon.textContent = '🔇';
+            } else if (value < 30) {
+                volumeIcon.textContent = '🔈';
+            } else if (value < 70) {
+                volumeIcon.textContent = '🔉';
+            } else {
+                volumeIcon.textContent = '🔊';
+            }
+        }
+
+        function updateMusicButton() {
+            const button = document.getElementById('music-toggle');
+            if (isMusicPlaying) {
+                button.textContent = '⏸';
+                button.classList.remove('paused');
+            } else {
+                button.textContent = '▶';
+                button.classList.add('paused');
+            }
+        }
+
+        function initAnimationSelector() {
+            const selector = document.getElementById('animation-selector');
+            // 清空现有选项
+            selector.innerHTML = '<option value="">选择动画...</option>';
+
+            // 添加所有动画选项
+            Object.keys(animationMap).sort().forEach(animationName => {
+                const option = document.createElement('option');
+                option.value = animationName;
+                option.textContent = animationName;
+                selector.appendChild(option);
+            });
+        }
+
+        function initCharacterSelector() {
+            const selector = document.getElementById('character-selector');
+            // 清空现有选项
+            selector.innerHTML = '<option value="">选择角色...</option>';
+
+            // 添加所有角色选项
+            Object.keys(vrmCharacters).sort().forEach(characterName => {
+                const option = document.createElement('option');
+                option.value = characterName;
+                option.textContent = characterName;
+                selector.appendChild(option);
+            });
+
+            // 设置默认选中的角色
+            selector.value = currentCharacterName;
+        }
+
+        function changeCharacter() {
+            const selector = document.getElementById('character-selector');
+            const selectedCharacter = selector.value;
+
+            if (!selectedCharacter) {
+                return;
+            }
+
+            if (selectedCharacter === currentCharacterName) {
+                return;
+            }
+
+            console.log(`👤 切换角色: ${currentCharacterName} -> ${selectedCharacter}`);
+
+            // 更新聊天头部的角色名称
+            const characterNames = {
+                'Fliza VRM': '芙莉莎',
+                'QuQu_U': 'QuQu',
+                'Ash1.0': 'Ash',
+                'CH_001_imiut': 'Imiut',
+                'CH_007_unkt': 'Unkt',
+                'Elinyaa': 'Elinyaa',
+                'IMERIS': 'Imeris',
+                'Lena': 'Lena',
+                'Lilium': 'Lilium',
+                'M_CH_06_Shiratori': 'Shiratori',
+                'Maple': 'Maple',
+                'NEKONA': 'Nekona',
+                'NecoMaid_Premium': 'NecoMaid',
+                'RINDO_Full': 'Rindo',
+                'Rainy': 'Rainy',
+                'RearAlice': 'Alice',
+                'Vivi_model': 'Vivi',
+                'Wolf': 'Wolf',
+                'Wolferia': 'Wolferia',
+                'YM_CH_03_Notia': 'Notia',
+                'Yawl_Dress': 'Yawl',
+                'Yuu uwaginasi': 'Yuu',
+                'Yuu': 'Yuu',
+                'kyoko': 'Kyoko',
+                'miru': 'Miru',
+                'sikirei_Rei': 'Rei'
+            };
+
+            const displayName = characterNames[selectedCharacter] || selectedCharacter;
+            document.querySelector('.chat-user-details h1').textContent = displayName;
+
+            // 加载新角色
+            loadVRM(selectedCharacter);
+
+            // 设置角色头像
+            setCharacterAvatar(selectedCharacter);
+
+            // 添加角色切换消息
+            setTimeout(() => {
+                addMessage(`你好！我是${displayName}，很高兴见到你~ 💕`, false);
+            }, 2000);
+        }
+
+        // 设置角色头像的函数
+        function setCharacterAvatar(characterKey) {
+            // 角色名到CSS类名的映射（支持两种格式：id和VRM文件名）
+            const characterToClass = {
+                // 基于id的映射（从character-select.html）
+                'alice': 'character-alice',
+                'ash': 'character-ash',
+                'elinyaa': 'character-elinyaa',
+                'fliza': 'character-fliza',
+                'imeris': 'character-imeris',
+                'kyoko': 'character-kyoko',
+                'lena': 'character-lena',
+                'lilium': 'character-lilium',
+                'maple': 'character-maple',
+                'miru': 'character-miru',
+                'miumiu': 'character-miumiu',
+                'neco': 'character-neco',
+                'nekona': 'character-nekona',
+                'notia': 'character-notia',
+                'ququ': 'character-ququ',
+                'rainy': 'character-rainy',
+                'rindo': 'character-rindo',
+                'sikirei': 'character-sikirei',
+                'vivi': 'character-vivi',
+                'wolf': 'character-wolf',
+                'wolferia': 'character-wolferia',
+                'yawl': 'character-yawl',
+                'yuu': 'character-yuu',
+                'zwei': 'character-zwei',
+                'bobo': 'character-bobo',
+                // 基于VRM文件名的映射（用于角色切换）
+                'Fliza VRM': 'character-fliza',
+                'QuQu_U': 'character-ququ', 
+                'Ash1.0': 'character-ash',
+                'CH_001_imiut': 'character-imeris',
+                'Elinyaa': 'character-elinyaa',
+                'IMERIS': 'character-imeris',
+                'Lena': 'character-lena',
+                'Lilium': 'character-lilium',
+                'Maple': 'character-maple',
+                'NEKONA': 'character-nekona',
+                'NecoMaid_Premium': 'character-neco',
+                'RINDO_Full': 'character-rindo',
+                'Rainy': 'character-rainy',
+                'RearAlice': 'character-alice',
+                'Vivi_model': 'character-vivi',
+                'Wolf': 'character-wolf',
+                'Wolferia': 'character-wolferia',
+                'YM_CH_03_Notia': 'character-notia',
+                'Yawl_Dress': 'character-yawl',
+                'Yuu uwaginasi': 'character-yuu',
+                'Yuu': 'character-yuu',
+                'kyoko': 'character-kyoko',
+                'miru': 'character-miru',
+                'sikirei_Rei': 'character-sikirei'
+            };
+
+            // 移除之前的所有角色类
+            const body = document.body;
+            const existingClasses = body.className.split(' ').filter(cls => !cls.startsWith('character-'));
+            const newClass = characterToClass[characterKey] || characterToClass[characterKey.toLowerCase()] || 'character-alice';
+            
+            body.className = existingClasses.concat([newClass]).join(' ');
+            
+            console.log(`🖼️ 设置角色头像: ${characterKey} -> ${newClass}`);
+        }
+
+        function playSelectedAnimation() {
+            const selector = document.getElementById('animation-selector');
+            const selectedAnimation = selector.value;
+
+            if (!selectedAnimation) {
+                alert('请先选择一个动画！');
+                return;
+            }
+
+            if (!currentVrm) {
+                alert('VRM模型还未加载完成！');
+                return;
+            }
+
+            const animationPath = animationMap[selectedAnimation];
+            if (animationPath) {
+                console.log(`🎬 播放动画: ${selectedAnimation}`);
+                loadAnimation(animationPath);
+                document.getElementById('current-animation').textContent = selectedAnimation;
+            } else {
+                console.error(`❌ 未找到动画: ${selectedAnimation}`);
+            }
+        }
+
+        // 窗口大小调整
+        function resizeRenderer() {
+            const container = document.querySelector('.vrm-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        }
+
+        window.addEventListener('resize', resizeRenderer);
+
+        // 动画循环
+        const clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const deltaTime = clock.getDelta();
+
+            // 自动眨眼逻辑
+            if (autoBlinking && currentVrm && availableExpressions.includes('blink')) {
+                blinkTimer += deltaTime;
+                if (blinkTimer >= blinkFrequency) {
+                    performBlink();
+                    blinkTimer = 0;
+                    blinkTimer = -Math.random() * 0.5;
+                }
+            }
+
+            if (currentMixer) {
+                currentMixer.update(deltaTime);
+            }
+
+            if (currentVrm) {
+                currentVrm.update(deltaTime);
+                // 更新脚底阴影位置
+                updateFootShadow();
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // 钱包验证系统
+        class WalletAuthenticator {
+            constructor() {
+                this.walletAddress = null;
+                this.isAuthenticated = false;
+                this.selectedCharacter = null;
+            }
+            
+            // 检查钱包验证状态
+            checkAuthentication() {
+                console.log('🔍 开始钱包验证流程...');
+                
+                // 1. 检查localStorage中的钱包地址
+                this.walletAddress = localStorage.getItem('wallet_address');
+                console.log('💰 localStorage钱包地址:', this.walletAddress);
+                
+                // 2. 检查选择的角色信息
+                const selectedCharacterData = localStorage.getItem('selectedCharacter');
+                console.log('👤 localStorage角色数据:', selectedCharacterData);
+                
+                if (!this.walletAddress) {
+                    console.log('❌ 未找到钱包地址，需要重新登录');
+                    console.log('📊 localStorage内容检查:');
+                    console.log('  - wallet_address:', localStorage.getItem('wallet_address'));
+                    console.log('  - selectedCharacter:', localStorage.getItem('selectedCharacter'));
+                    this.showUnauthorizedOverlay();
+                    return false;
+                }
+                
+                if (!selectedCharacterData) {
+                    console.log('❌ 未找到角色选择信息，重定向到角色选择页面');
+                    this.redirectToCharacterSelect();
+                    return false;
+                }
+                
+                try {
+                    this.selectedCharacter = JSON.parse(selectedCharacterData);
+                    console.log('📦 解析的角色数据:', this.selectedCharacter);
+                    
+                    // 验证角色数据中的钱包地址是否匹配
+                    if (this.selectedCharacter.walletAddress !== this.walletAddress) {
+                        console.log('⚠️ 钱包地址不匹配:');
+                        console.log('  - 角色数据中的钱包:', this.selectedCharacter.walletAddress);
+                        console.log('  - localStorage中的钱包:', this.walletAddress);
+                        console.log('  - 重定向到角色选择页面');
+                        this.redirectToCharacterSelect();
+                        return false;
+                    }
+                    
+                    this.isAuthenticated = true;
+                    this.updateWalletUI();
+                    console.log('✅ 钱包验证成功:', this.walletAddress);
+                    console.log('✅ 验证的角色:', this.selectedCharacter.name);
+                    return true;
+                    
+                } catch (error) {
+                    console.error('❌ 角色数据解析失败:', error);
+                    console.error('❌ 原始数据:', selectedCharacterData);
+                    this.redirectToCharacterSelect();
+                    return false;
+                }
+            }
+            
+            // 显示未授权覆盖层
+            showUnauthorizedOverlay() {
+                const overlay = document.getElementById('unauthorized-overlay');
+                const chatWindow = document.getElementById('floating-chat');
+                const controls = document.querySelector('.control-panel');
+                const musicControls = document.querySelector('.music-controls');
+                
+                // 隐藏聊天相关UI
+                if (chatWindow) chatWindow.style.display = 'none';
+                if (controls) controls.style.display = 'none';
+                if (musicControls) musicControls.style.display = 'none';
+                
+                // 显示未授权提示
+                overlay.style.display = 'flex';
+            }
+            
+            // 更新钱包UI显示
+            updateWalletUI() {
+                const walletStatusInfo = document.getElementById('wallet-status-info');
+                const walletAddressElement = document.getElementById('wallet-address');
+                
+                if (this.walletAddress) {
+                    walletStatusInfo.style.display = 'flex';
+                    walletAddressElement.textContent = this.formatAddress(this.walletAddress);
+                    
+                    // 更新角色名称显示
+                    if (this.selectedCharacter) {
+                        const characterNameElement = document.getElementById('character-name');
+                        if (characterNameElement) {
+                            characterNameElement.textContent = this.selectedCharacter.name;
+                        }
+                        
+                        // 更新欢迎消息中的角色信息
+                        const welcomeMessage = document.querySelector('.message-bubble.ai .bubble-content');
+                        if (welcomeMessage && !welcomeMessage.dataset.updated) {
+                            welcomeMessage.textContent = `你好！我是${this.selectedCharacter.name}，很高兴再次见到你~ 💕 让我们继续我们的对话吧！`;
+                            welcomeMessage.dataset.updated = 'true';
+                        }
+                    }
+                }
+            }
+            
+            // 格式化地址显示
+            formatAddress(address) {
+                return `${address.slice(0, 4)}...${address.slice(-4)}`;
+            }
+            
+            // 断开钱包连接
+            disconnect() {
+                console.log('🔌 walletAuth.disconnect被调用');
+                console.log('💾 当前localStorage内容:', {...localStorage});
+                if (confirm('确定要断开钱包连接吗？这将清除所有本地数据。')) {
+                    console.log('✅ 用户确认断开连接');
+                    // 清除所有相关数据
+                    console.log('🗑️ 清除wallet_address');
+                    localStorage.removeItem('wallet_address');
+                    console.log('🗑️ 清除wallet_type');
+                    localStorage.removeItem('wallet_type');
+                    console.log('🗑️ 清除selectedCharacter');
+                    localStorage.removeItem('selectedCharacter');
+                    
+                    // 清除角色记忆数据（可选）
+                    const keys = Object.keys(localStorage);
+                    console.log('🔍 检查需要清除的记忆数据:', keys);
+                    keys.forEach(key => {
+                        if (key.startsWith('memory_') || key.startsWith('user_profile_')) {
+                            localStorage.removeItem(key);
+                        }
+                    });
+                    
+                    // 重定向到角色选择页面
+                    this.redirectToCharacterSelect();
+                }
+            }
+            
+            // 重定向到角色选择页面
+            redirectToCharacterSelect() {
+                window.location.href = 'character-select.html';
+            }
+            
+            // 获取当前用户ID（钱包地址）
+            getCurrentUserId() {
+                return this.walletAddress;
+            }
+            
+            // 获取当前角色信息
+            getCurrentCharacter() {
+                return this.selectedCharacter;
+            }
+        }
+        
+        // 全局钱包验证实例
+        const walletAuth = new WalletAuthenticator();
+        window.walletAuth = walletAuth;
+        
+        // 钱包相关全局函数
+        window.disconnectWallet = function() {
+            console.log('🔌 disconnectWallet被调用');
+            if (walletAuth) {
+                walletAuth.disconnect();
+            } else {
+                console.error('❌ walletAuth未定义');
+            }
+        };
+        
+        window.redirectToCharacterSelect = function() {
+            walletAuth.redirectToCharacterSelect();
+        };
+        
+        // 测试函数 - 强制登出
+        window.forceDisconnect = function() {
+            console.log('🧪 强制登出测试');
+            localStorage.clear();
+            location.href = 'character-select.html';
+        };
+
+        // 跳转到角色选择页面
+        function goToCharacterSelect() {
+            window.location.href = 'character-select.html';
+        }
+
+        // 拖拽功能
+        let isDragging = false;
+        let currentX;
+        let currentY;
+        let initialX;
+        let initialY;
+        let xOffset = 0;
+        let yOffset = 0;
+
+        function initDragAndDrop() {
+            const chatHeader = document.querySelector('.chat-window-header');
+            const chatWindow = document.getElementById('floating-chat');
+            
+            // 设置聊天框的初始绝对位置，避免依赖CSS transform
+            const windowHeight = window.innerHeight;
+            const chatHeight = chatWindow.offsetHeight;
+            const initialTop = Math.max(0, (windowHeight - chatHeight) / 2);
+            
+            chatWindow.style.top = initialTop + 'px';
+            chatWindow.style.right = '20px';
+            chatWindow.style.left = 'auto';
+            chatWindow.style.transform = 'none';
+            
+            chatHeader.addEventListener('mousedown', dragStart);
+            document.addEventListener('mousemove', dragMove);
+            document.addEventListener('mouseup', dragEnd);
+            
+            // 触摸事件支持
+            chatHeader.addEventListener('touchstart', dragStart);
+            document.addEventListener('touchmove', dragMove);
+            document.addEventListener('touchend', dragEnd);
+        }
+
+        function dragStart(e) {
+            const chatWindow = document.getElementById('floating-chat');
+            
+            e.preventDefault();
+            
+            // 获取当前窗口的实际位置
+            const rect = chatWindow.getBoundingClientRect();
+            
+            if (e.type === 'touchstart') {
+                initialX = e.touches[0].clientX - rect.left;
+                initialY = e.touches[0].clientY - rect.top;
+            } else {
+                initialX = e.clientX - rect.left;
+                initialY = e.clientY - rect.top;
+            }
+
+            isDragging = true;
+            // 不立即添加dragging类，只有在实际移动时才添加
+        }
+
+        function dragMove(e) {
+            if (!isDragging) return;
+            
+            e.preventDefault();
+            
+            const chatWindow = document.getElementById('floating-chat');
+            
+            // 只有在实际移动时才添加dragging样式
+            if (!chatWindow.classList.contains('dragging')) {
+                chatWindow.classList.add('dragging');
+            }
+            
+            if (e.type === 'touchmove') {
+                currentX = e.touches[0].clientX - initialX;
+                currentY = e.touches[0].clientY - initialY;
+            } else {
+                currentX = e.clientX - initialX;
+                currentY = e.clientY - initialY;
+            }
+            
+            // 限制拖拽范围在屏幕内
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+            const chatWidth = chatWindow.offsetWidth;
+            const chatHeight = chatWindow.offsetHeight;
+            
+            // 计算边界限制
+            const minX = 0;
+            const maxX = windowWidth - chatWidth;
+            const minY = 0;
+            const maxY = windowHeight - chatHeight;
+            
+            currentX = Math.max(minX, Math.min(maxX, currentX));
+            currentY = Math.max(minY, Math.min(maxY, currentY));
+            
+            chatWindow.style.left = currentX + 'px';
+            chatWindow.style.top = currentY + 'px';
+            chatWindow.style.right = 'auto';
+            chatWindow.style.transform = 'none';
+        }
+
+        function dragEnd(e) {
+            if (!isDragging) return;
+            
+            const chatWindow = document.getElementById('floating-chat');
+            isDragging = false;
+            chatWindow.classList.remove('dragging');
+        }
+
+        // 全局函数导出
+        window.triggerEmotion = triggerEmotion;
+        window.toggleAutoMode = toggleAutoMode;
+        window.toggleDebugMode = toggleDebugMode;
+        window.playSelectedAnimation = playSelectedAnimation;
+        window.changeCharacter = changeCharacter;
+        window.toggleMusic = toggleMusic;
+        window.adjustVolume = adjustVolume;
+        window.sendMessage = sendMessage;
+        window.sendChatMessage = sendChatMessage;
+        window.handleKeyPress = handleKeyPress;
+        window.handleChatKeyPress = handleChatKeyPress;
+        window.addMessage = addMessage;
+        window.updateStreamingMessageUI = updateStreamingMessageUI;
+        
+        // 集成AI聊天系统
+        let selectedCharacter = null;
+        
+        function initializeAIChat() {
+            if (window.chatSystemV2 && selectedCharacter) {
+                window.chatSystemV2.setCharacter(selectedCharacter);
+                console.log('💕 AI聊天系统V2已连接到角色:', selectedCharacter.name);
+                
+                // 添加欢迎消息（如果是新对话）
+                setTimeout(async () => {
+                    const stats = await window.chatSystemV2.getUserStats();
+                    if (!stats || stats.totalInteractions === 0) {
+                        const welcomeMessage = getWelcomeMessage(selectedCharacter);
+                        window.chatSystemV2.updateChatUI({
+                            id: Date.now(),
+                            sender: 'ai',
+                            content: welcomeMessage,
+                            timestamp: new Date().toISOString(),
+                            emotion: 'happy'
+                        });
+                    }
+                }, 1000);
+            }
+        }
+        
+        function getWelcomeMessage(character) {
+            const timeContext = new Date().getHours();
+            let greeting = '你好';
+            if (timeContext < 12) greeting = '早上好';
+            else if (timeContext < 18) greeting = '下午好';
+            else greeting = '晚上好';
+            
+            const welcomeMessages = {
+                'Alice': `${greeting}！我是Alice～很高兴见到你！今天想聊什么呢？`,
+                'Fliza': `${greeting}～我是Fliza，一直在等你呢。`,
+                'Ash': `嗯...${greeting}，我是Ash。有什么想说的吗？`,
+                'Elinyaa': `${greeting}！我是Elinyaa～今天也要开心哦！`,
+                'default': `${greeting}！我是${character.name}，很高兴认识你～`
+            };
+            return welcomeMessages[character.name] || welcomeMessages.default;
+        }
+        
+        // 重写发送消息函数以使用AI系统V2
+        const originalSendChatMessage = sendChatMessage;
+        sendChatMessage = function() {
+            const input = document.getElementById('chat-input-field');
+            const message = input.value.trim();
+            if (!message) return;
+            
+            // 添加发送按钮动画
+            const sendBtn = document.querySelector('.send-btn');
+            sendBtn.classList.add('sending');
+            setTimeout(() => {
+                sendBtn.classList.remove('sending');
+            }, 600);
+            
+            // 使用AI聊天系统V2发送消息
+            if (window.chatSystemV2 && selectedCharacter) {
+                window.chatSystemV2.sendMessage(message);
+                input.value = '';
+            } else {
+                // 降级到原始聊天功能
+                originalSendChatMessage();
+            }
+        }
+        
+        // VRM表情触发函数（供AI系统调用）
+        window.triggerVRMExpression = function(expression) {
+            if (currentVRM && currentVRM.expressionManager) {
+                const expressionMap = {
+                    'smile': 'happy',
+                    'wink': 'fun', 
+                    'blush': 'happy',
+                    'thinking': 'neutral',
+                    'shy_smile': 'happy',
+                    'nod': 'neutral',
+                    'interested': 'surprised'
+                };
+                
+                const vrmExpression = expressionMap[expression] || 'neutral';
+                
+                // 重置所有表情
+                Object.keys(currentVRM.expressionManager.expressionMap).forEach(name => {
+                    currentVRM.expressionManager.setValue(name, 0.0);
+                });
+                
+                // 设置目标表情
+                currentVRM.expressionManager.setValue(vrmExpression, 1.0);
+                
+                // 2秒后恢复中性表情
+                setTimeout(() => {
+                    if (currentVRM && currentVRM.expressionManager) {
+                        currentVRM.expressionManager.setValue(vrmExpression, 0.0);
+                    }
+                }, 2000);
+                
+                console.log(`😊 触发VRM表情: ${expression} -> ${vrmExpression}`);
+            }
+        };
+        
+        // 获取角色个性信息
+        function getCharacterPersonality(characterName) {
+            const personalities = {
+                'Fliza VRM': '温柔体贴的大姐姐类型，总是关心着你的感受。',
+                'QuQu_U': '活泼可爱的萝莉，总是充满元气。',
+                'Ash1.0': '酷酷的中性风女孩，有着独特的个人魅力。',
+                'Elinyaa': '神秘优雅的精灵少女，有着不可思议的魅力。',
+                'IMERIS': '高贵优雅的贵族少女，举止端庄。',
+                'Maple': '温暖如秋日阳光的女孩，总是给人安全感。',
+                'NEKONA': '可爱的猫娘，有着猫咪般的慵懒与活泼。',
+                'RINDO_Full': '传统和风的大和抚子，温柔贤淑。',
+                'Rainy': '活泼开朗的邻家女孩，总是充满活力。',
+                'Vivi_model': '充满好奇心的探险家，总是对世界充满热情。',
+                'Wolferia': '高傲的狼族公主，有着王者的气质。',
+                'Yawl_Dress': '神秘的魔法少女，掌握着不可思议的力量。',
+                'default': '温柔可爱的AI女友，总是陪伴在你身边。'
+            };
+            return personalities[characterName] || personalities.default;
+        }
+
+        // 获取NPC人设（用于记忆系统）
+        function getNPCPersona(npcId) {
+            const personas = {
+                'alice': '温柔可爱的邻家女孩，总是关心着用户的感受，喜欢日常聊天和分享生活。性格开朗友善，善于倾听，会记住用户的喜好和重要事件。',
+                'fliza': '温柔体贴的大姐姐类型，成熟优雅，善解人意。总是用温暖的话语安慰用户，会主动关心用户的生活状态。',
+                'ash': '酷酷的中性风女孩，有着独特的个人魅力，直率真诚。虽然表面冷淡，但内心温柔，会默默关心用户。',
+                'elinyaa': '神秘优雅的精灵少女，有着不可思议的魅力，喜欢诗歌和艺术。说话富有诗意，经常分享美好的事物。',
+                'imeris': '高贵优雅的贵族少女，举止端庄，知识渊博。说话优雅得体，但也有可爱的一面。',
+                'maple': '温暖如秋日阳光的女孩，总是给人安全感，喜欢烹饪和园艺。会分享生活小贴士，关心用户的健康。',
+                'nekona': '可爱的猫娘，有着猫咪般的慵懒与活泼，喜欢撒娇。说话时会带有"喵"的口癖，行为可爱迷人。',
+                'rainy': '活泼开朗的邻家女孩，总是充满活力，喜欢运动和音乐。会鼓励用户积极向上，分享快乐的事情。',
+                'vivi': '充满好奇心的探险家，总是对世界充满热情，喜欢学习新事物。会和用户分享有趣的知识和见解。',
+                'wolferia': '高傲的狼族公主，有着王者的气质，但内心渴望被理解。外表高冷，但会逐渐展现温柔的一面。'
+            };
+            return personas[npcId] || personas['alice'];
+        }
+
+        // 使用记忆系统生成AI回复
+        async function generateAIResponseWithMemory(userMessage, contextPrompt) {
+            // 这里应该调用你的后端API或OpenAI API
+            // 现在先返回一个模拟的响应，等待你配置好API后再替换
+            
+            console.log('🧠 使用记忆上下文生成回复:', contextPrompt);
+            
+            // 临时使用原有的AI回复系统，但加入记忆信息
+            const baseResponse = generateAIResponse(userMessage);
+            
+            // 添加一些记忆相关的响应
+            const memoryEnhancedResponses = [
+                baseResponse,
+                `${baseResponse} 我还记得你之前提到的事情呢~`,
+                `${baseResponse} 根据我对你的了解，你应该会喜欢这个建议。`,
+                `${baseResponse} 这让我想起了我们之前的对话。`
+            ];
+            
+            return memoryEnhancedResponses[Math.floor(Math.random() * memoryEnhancedResponses.length)];
+        }
+        
+        // 在VRM加载完成后自动初始化AI聊天系统
+        function onVRMLoadComplete(characterName, vrmPath) {
+            selectedCharacter = {
+                name: characterName.replace(' VRM', '').replace('_', ' '),
+                personality: getCharacterPersonality(characterName),
+                file: vrmPath,
+                id: characterName
+            };
+            
+            // 设置角色头像
+            setCharacterAvatar(characterName);
+            
+            setTimeout(() => {
+                initializeAIChat();
+            }, 1500);
+        }
+        
+        // 更新手机状态栏时间
+        function updatePhoneTime() {
+            const timeDisplay = document.getElementById('phone-time');
+            if (timeDisplay) {
+                const now = new Date();
+                const timeString = now.toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    hour12: false 
+                });
+                timeDisplay.textContent = timeString;
+            }
+        }
+        
+        // 每分钟更新一次时间
+        setInterval(updatePhoneTime, 60000);
+        // 立即更新一次时间
+        updatePhoneTime();
+        
+        window.goToCharacterSelect = goToCharacterSelect;
+        window.initDragAndDrop = initDragAndDrop;
+
+        // 初始化
+        function init() {
+            console.log('🚀 AI Companion 初始化开始...');
+            console.log('🌐 当前页面URL:', window.location.href);
+            console.log('📱 钱包验证器状态:', walletAuth);
+            
+            // 首先进行钱包验证
+            console.log('⚡ 开始调用钱包验证...');
+            const isAuthenticated = walletAuth.checkAuthentication();
+            console.log('🔐 验证结果:', isAuthenticated);
+            
+            if (!isAuthenticated) {
+                console.log('❌ 钱包验证失败，停止初始化');
+                return; // 如果验证失败，不继续初始化
+            }
+            
+            console.log('✅ 钱包验证成功，继续初始化应用');
+            
+            // 用户资料填写已移至character-select页面，index.html只处理已注册用户
+            
+            // 检查是否有选择的角色，然后加载VRM
+            loadSelectedCharacter();
+            
+            resizeRenderer();
+            animate();
+
+            // 初始化选择器
+            initAnimationSelector();
+            initCharacterSelector();
+            
+            // 初始化拖拽功能
+            initDragAndDrop();
+
+            // 延迟初始化背景音乐，确保DOM完全加载
+            setTimeout(() => {
+                initBackgroundMusic();
+            }, 1000);
+
+            // 初始状态 - 检查元素是否存在
+            const aiStatusElement = document.getElementById('ai-status');
+            if (aiStatusElement) {
+                aiStatusElement.innerHTML = '<span class="online-indicator"></span>AI智能模式';
+            }
+            
+            console.log('🎉 AI Companion 初始化完成');
+        }
+
+        // 加载选择的角色
+        function loadSelectedCharacter() {
+            try {
+                // 从钱包验证系统获取角色信息
+                const character = walletAuth.getCurrentCharacter();
+                
+                console.log('📱 loadSelectedCharacter 调试信息:');
+                console.log('- character:', character);
+                console.log('- localStorage selectedCharacter:', localStorage.getItem('selectedCharacter'));
+                
+                if (character) {
+                    // 更新悬浮聊天框中的角色名称
+                    const characterNameElement = document.getElementById('character-name');
+                    if (characterNameElement) {
+                        characterNameElement.textContent = character.name;
+                    }
+                    
+                    // 更新欢迎消息 - 检查是否是老用户
+                    const welcomeMessage = document.querySelector('.message-bubble.ai .bubble-content');
+                    if (welcomeMessage && !welcomeMessage.dataset.updated) {
+                        const userProfile = localStorage.getItem(`user_profile_${walletAuth.getCurrentUserId()}`);
+                        if (userProfile) {
+                            // 老用户
+                            welcomeMessage.textContent = `欢迎回来！我是${character.name}，我还记得我们之前的对话呢~ 💕`;
+                        } else {
+                            // 新用户
+                            welcomeMessage.textContent = `你好！我是${character.name}，很高兴认识你！让我们开始愉快的聊天吧~ 💕`;
+                        }
+                        welcomeMessage.dataset.updated = 'true';
+                    }
+                    
+                    // 设置默认VRM文件
+                    defaultVrmFile = character.file;
+                    
+                    console.log(`✅ 已加载角色: ${character.name} (钱包: ${walletAuth.formatAddress(character.walletAddress)})`);
+                    console.log(`📁 设置defaultVrmFile: ${defaultVrmFile}`);
+                    
+                    // 设置角色头像（基于character.id）
+                    if (character.id) {
+                        setCharacterAvatar(character.id);
+                    }
+                    
+                    // 现在加载VRM文件
+                    loadVRM();
+                } else {
+                    throw new Error('未找到角色信息');
+                }
+            } catch (error) {
+                console.error('加载角色失败:', error);
+                // 重定向到角色选择页面
+                walletAuth.redirectToCharacterSelect();
+            }
+        }
+
+        // 暴露变量到全局作用域以供按钮调用
+        window.currentVrm = currentVrm;
+        window.availableExpressions = availableExpressions;
+        
+        // 暴露内部函数到全局
+        window.resetExpressions = resetExpressions;
+        window.setExpression = setExpression;
+
+        // 等待DOM加载完成后再初始化
+        console.log('🔍 检查DOM状态:', document.readyState);
+        console.log('🔍 init函数是否存在:', typeof init);
+        console.log('⚙️ 模块脚本执行完毕，准备初始化...');
+        
+        if (document.readyState === 'loading') {
+            console.log('⏳ DOM加载中，等待DOMContentLoaded事件');
+            document.addEventListener('DOMContentLoaded', () => {
+                console.log('✅ DOMContentLoaded事件触发，调用init()');
+                init();
+            });
+        } else {
+            // DOM已经加载完成
+            console.log('✅ DOM已加载，立即调用init()');
+            init();
+        }
+    </script>
+
+    <script>
+        // 全局表情测试函数
+        window.testShyExpression = function() {
+            console.log('🧪 测试害羞表情...');
+            
+            if (!window.currentVrm || !window.currentVrm.expressionManager) {
+                alert('VRM模型还未加载完成！请等待加载...');
+                return;
+            }
+
+            console.log('可用表情:', window.availableExpressions);
+            
+            // 重置所有表情
+            if (window.resetExpressions) {
+                window.resetExpressions();
+            }
+            
+            // 尝试多种害羞相关的表情
+            const shyExpressions = ['shy', 'embarrassed', 'blush', 'surprised', 'sad'];
+            let appliedExpression = null;
+            
+            shyExpressions.forEach(expr => {
+                if (window.availableExpressions && window.availableExpressions.includes(expr)) {
+                    if (window.setExpression) {
+                        window.setExpression(expr, 1.0);
+                        appliedExpression = expr;
+                        console.log(`✅ 应用表情: ${expr}`);
+                    }
+                }
+            });
+            
+            if (appliedExpression) {
+                document.getElementById('current-expression').textContent = `害羞 (${appliedExpression})`;
+                // 5秒后恢复中性
+                setTimeout(() => {
+                    if (window.resetExpressions) {
+                        window.resetExpressions();
+                    }
+                }, 5000);
+            } else {
+                const available = window.availableExpressions ? window.availableExpressions.join(', ') : '无';
+                alert('当前VRM模型不支持害羞表情 😔\n\n可用表情: ' + available + '\n\n建议：尝试点击其他表情按钮看看效果！');
+            }
+        };
+
+        window.testHappyExpression = function() {
+            if (!window.currentVrm || !window.currentVrm.expressionManager) {
+                alert('VRM模型还未加载完成！');
+                return;
+            }
+
+            if (window.availableExpressions && window.availableExpressions.includes('happy')) {
+                if (window.setExpression) {
+                    window.setExpression('happy', 1.0);
+                    document.getElementById('current-expression').textContent = '开心';
+                    setTimeout(() => {
+                        if (window.resetExpressions) {
+                            window.resetExpressions();
+                        }
+                    }, 3000);
+                }
+            } else {
+                const available = window.availableExpressions ? window.availableExpressions.join(', ') : '无';
+                alert('当前VRM模型不支持开心表情\n可用表情: ' + available);
+            }
+        };
+
+        window.testSadExpression = function() {
+            if (!window.currentVrm || !window.currentVrm.expressionManager) {
+                alert('VRM模型还未加载完成！');
+                return;
+            }
+
+            if (window.availableExpressions && window.availableExpressions.includes('sad')) {
+                if (window.setExpression) {
+                    window.setExpression('sad', 1.0);
+                    document.getElementById('current-expression').textContent = '难过';
+                    setTimeout(() => {
+                        if (window.resetExpressions) {
+                            window.resetExpressions();
+                        }
+                    }, 3000);
+                }
+            } else {
+                const available = window.availableExpressions ? window.availableExpressions.join(', ') : '无';
+                alert('当前VRM模型不支持难过表情\n可用表情: ' + available);
+            }
+        };
+
+        window.resetAllExpressions = function() {
+            if (!window.currentVrm || !window.currentVrm.expressionManager) {
+                alert('VRM模型还未加载完成！');
+                return;
+            }
+
+            if (window.resetExpressions) {
+                window.resetExpressions();
+            }
+            console.log('🔄 所有表情已重置');
+        };
+    </script>
+    
+    <!-- 用户资料注册面板 -->
+
+    <!-- 钱包连接遮罩层（初始隐藏） -->
+    
+    <!-- 用户资料管理已移至character-select页面 -->
+
+    <!-- 钱包连接遮罩层（初始隐藏） -->
+    <div class="wallet-login-overlay" id="wallet-login-overlay" style="display: none;">
+        <div class="wallet-login-panel">
+            <div class="wallet-login-icon">🦊</div>
+            <h2 class="wallet-login-title">连接钱包开始游戏</h2>
+            <p class="wallet-login-subtitle">使用Solana钱包登录，与您的专属AI女友开始聊天</p>
+            
+            <button class="wallet-connect-btn" onclick="connectWallet()" id="wallet-connect-btn">
+                连接钱包
+            </button>
+            
+            <div class="wallet-options">
+                <a href="https://phantom.app/" target="_blank" class="wallet-option">
+                    <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #AB9FF2, #7B6BF0); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">P</div>
+                    <span>Phantom</span>
+                </a>
+                <a href="https://solflare.com/" target="_blank" class="wallet-option">
+                    <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #FF6B35, #F7931E); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">S</div>
+                    <span>Solflare</span>
+                </a>
+            </div>
+            
+            <p style="font-size: 12px; color: #999; margin-top: 20px;">
+                💡 没有钱包？点击上方图标安装后刷新页面
+            </p>
+        </div>
+    </div>
+    
+    <!-- 页面加载后初始化 -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 检查是否从角色选择页面跳转过来
+            const hasStoredWallet = localStorage.getItem('wallet_address');
+            const hasSelectedCharacter = localStorage.getItem('selectedCharacter');
+            
+            if (hasStoredWallet && hasSelectedCharacter) {
+                console.log('🚀 从角色选择页面跳转，开始初始化聊天...');
+                
+                // 钱包已在character-select页面验证，直接显示已登录状态
+                
+                // 暂时跳过记忆系统初始化，直接使用OpenAI
+                console.log('⚠️ 跳过记忆系统初始化，直接使用OpenAI聊天');
+                console.log('💬 聊天系统已准备就绪');
+
+                // 用户资料检查已移至init()函数中，确保在钱包验证后立即执行
+                
+                // 等待聊天系统初始化
+                setTimeout(() => {
+                    if (window.chatSystemV2) {
+                        console.log('💬 聊天系统已准备就绪');
+                    }
+                }, 1000);
+            }
+        });
+    </script>
+</body>
+
+</html>

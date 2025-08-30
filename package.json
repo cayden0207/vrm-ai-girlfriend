@@ -1,0 +1,28 @@
+{
+  "name": "ai-girlfriend-memory-system",
+  "version": "1.0.0",
+  "description": "AI女友记忆管理系统",
+  "main": "index.html",
+  "scripts": {
+    "install-memory": "npm install @supabase/supabase-js openai",
+    "dev": "python -m http.server 8000",
+    "start": "node server.js",
+    "setup": "echo '请先配置Supabase项目，然后运行npm run install-memory'"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.56.0",
+    "openai": "^4.104.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  },
+  "keywords": [
+    "AI",
+    "chatbot",
+    "memory",
+    "supabase",
+    "VRM"
+  ],
+  "author": "AI女友开发团队",
+  "license": "MIT"
+}

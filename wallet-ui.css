@@ -1,0 +1,722 @@
+/* Solana钱包UI样式 */
+
+/* 钱包连接按钮容器 - 右上角显示 */
+.wallet-connect-container {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+/* 钱包连接按钮样式 */
+.wallet-connect-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    backdrop-filter: blur(10px);
+    position: relative;
+    overflow: hidden;
+}
+
+.wallet-connect-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.wallet-connect-button:active {
+    transform: translateY(0);
+}
+
+.wallet-connect-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.wallet-connect-button:hover::before {
+    left: 100%;
+}
+
+.wallet-icon {
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.wallet-text {
+    font-weight: 600;
+}
+
+/* 钱包登录遮罩层 */
+.wallet-login-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.9));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    backdrop-filter: blur(10px);
+}
+
+.wallet-login-panel {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 255, 0.95));
+    border-radius: 20px;
+    padding: 40px;
+    text-align: center;
+    max-width: 450px;
+    width: 90%;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    animation: loginPanelSlide 0.6s ease-out;
+}
+
+@keyframes loginPanelSlide {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.wallet-login-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+    animation: floatIcon 3s ease-in-out infinite;
+}
+
+@keyframes floatIcon {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+.wallet-login-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 12px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.wallet-login-subtitle {
+    font-size: 16px;
+    color: #666;
+    margin-bottom: 30px;
+    line-height: 1.5;
+}
+
+/* 钱包连接按钮 */
+.wallet-connect-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 15px 40px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.wallet-connect-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+}
+
+.wallet-connect-btn:active {
+    transform: translateY(0);
+}
+
+.wallet-connect-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.wallet-connect-btn:hover::before {
+    left: 100%;
+}
+
+/* 钱包信息显示 */
+.wallet-info {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 10px 15px;
+    border-radius: 25px;
+    display: none;
+    align-items: center;
+    gap: 10px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 1000;
+}
+
+.wallet-avatar {
+    width: 24px;
+    height: 24px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.wallet-address {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.wallet-disconnect {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.wallet-disconnect:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* 钱包选择选项 */
+.wallet-options {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin: 25px 0;
+}
+
+.wallet-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 20px;
+    border: 2px solid rgba(102, 126, 234, 0.2);
+    border-radius: 12px;
+    text-decoration: none;
+    color: #333;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.wallet-option:hover {
+    border-color: #667eea;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
+}
+
+.wallet-option img {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+}
+
+.wallet-option span {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+/* 钱包错误弹窗 */
+.wallet-error-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10001;
+}
+
+.wallet-error-panel {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.error-icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+}
+
+.wallet-error-panel h3 {
+    color: #333;
+    margin-bottom: 10px;
+    font-size: 20px;
+}
+
+.wallet-error-panel p {
+    color: #666;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.error-close-btn {
+    background: #667eea;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.error-close-btn:hover {
+    background: #5a6fd8;
+    transform: translateY(-1px);
+}
+
+/* 钱包消息提示 */
+.wallet-message {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 10000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.wallet-message.success {
+    background: #4CAF50;
+}
+
+.wallet-message.error {
+    background: #f44336;
+}
+
+.wallet-message.info {
+    background: #2196F3;
+}
+
+/* 加载动画 */
+.wallet-loading {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.wallet-loading::after {
+    content: '';
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .wallet-login-panel {
+        padding: 30px 20px;
+        margin: 20px;
+    }
+    
+    .wallet-login-title {
+        font-size: 24px;
+    }
+    
+    .wallet-options {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .wallet-option {
+        flex-direction: row;
+        justify-content: center;
+        padding: 15px;
+    }
+    
+    .wallet-info {
+        position: relative;
+        top: auto;
+        right: auto;
+        margin: 10px;
+        border-radius: 12px;
+    }
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+    .wallet-login-panel {
+        background: linear-gradient(135deg, rgba(30, 30, 30, 0.95), rgba(20, 20, 20, 0.95));
+        color: white;
+    }
+    
+    .wallet-login-title {
+        color: white;
+    }
+    
+    .wallet-login-subtitle {
+        color: #ccc;
+    }
+    
+    .wallet-option {
+        background: rgba(30, 30, 30, 0.5);
+        color: white;
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+    
+    .wallet-option:hover {
+        border-color: #667eea;
+    }
+}
+
+/* 用户资料注册面板 */
+.user-profile-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: linear-gradient(135deg, rgba(135, 206, 235, 0.95), rgba(255, 192, 203, 0.95));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 15000;
+    backdrop-filter: blur(10px);
+}
+
+.profile-panel {
+    background: linear-gradient(135deg, #f0f8ff 0%, #ffe4e6 50%, #f0f8ff 100%);
+    border-radius: 20px;
+    padding: 40px;
+    max-width: 480px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    border: 3px solid #fff;
+    position: relative;
+    overflow: hidden;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.profile-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: linear-gradient(90deg, #87ceeb, #ffb6c1, #87ceeb);
+    border-radius: 17px 17px 0 0;
+}
+
+.profile-panel-header {
+    position: relative;
+    text-align: center;
+    margin-bottom: 30px;
+    z-index: 1;
+}
+
+.profile-panel-title {
+    color: #fff;
+    font-size: 20px;
+    font-weight: bold;
+    margin: 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    padding-top: 15px;
+}
+
+.profile-form {
+    position: relative;
+    z-index: 1;
+}
+
+.profile-field {
+    margin-bottom: 25px;
+}
+
+.field-label {
+    color: #d4af37;
+    font-weight: bold;
+    font-size: 16px;
+    margin-bottom: 8px;
+    display: block;
+    text-align: center;
+    position: relative;
+}
+
+.field-label::before,
+.field-label::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 40px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #d4af37, transparent);
+}
+
+.field-label::before {
+    left: -60px;
+}
+
+.field-label::after {
+    right: -60px;
+}
+
+.profile-input {
+    width: 100%;
+    padding: 12px 20px;
+    border: 2px solid #87ceeb;
+    border-radius: 25px;
+    background: rgba(173, 216, 230, 0.3);
+    font-size: 16px;
+    text-align: center;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+}
+
+.profile-input:focus {
+    outline: none;
+    border-color: #d4af37;
+    background: rgba(173, 216, 230, 0.5);
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
+}
+
+.profile-input::placeholder {
+    color: #999;
+    font-style: italic;
+}
+
+.name-inputs {
+    display: flex;
+    gap: 15px;
+}
+
+.name-inputs .profile-input {
+    flex: 1;
+}
+
+.profile-select {
+    width: 100%;
+    padding: 12px 20px;
+    border: 2px solid #87ceeb;
+    border-radius: 25px;
+    background: rgba(173, 216, 230, 0.3);
+    font-size: 16px;
+    text-align: center;
+    box-sizing: border-box;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.profile-select:focus {
+    outline: none;
+    border-color: #d4af37;
+    background: rgba(173, 216, 230, 0.5);
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
+}
+
+.birthday-inputs {
+    display: flex;
+    gap: 15px;
+}
+
+.birthday-inputs .profile-select {
+    flex: 1;
+}
+
+.field-note {
+    font-size: 12px;
+    color: #ff69b4;
+    text-align: center;
+    margin-top: 8px;
+    font-weight: 500;
+    line-height: 1.3;
+}
+
+.profile-submit-btn {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, #ff69b4, #ff1493);
+    color: white;
+    border: none;
+    border-radius: 30px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.profile-submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(255, 105, 180, 0.4);
+}
+
+.profile-submit-btn:active {
+    transform: translateY(0);
+}
+
+.memory-section {
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 15px;
+    padding: 20px;
+    margin-top: 20px;
+    border: 2px solid rgba(135, 206, 235, 0.5);
+}
+
+.memory-title {
+    color: #4682b4;
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.memory-field {
+    margin-bottom: 15px;
+}
+
+.memory-field:last-child {
+    margin-bottom: 0;
+}
+
+.memory-label {
+    color: #4682b4;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 5px;
+    display: block;
+}
+
+.memory-input {
+    width: 100%;
+    padding: 8px 15px;
+    border: 1px solid #87ceeb;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.8);
+    font-size: 14px;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+}
+
+.memory-input:focus {
+    outline: none;
+    border-color: #4682b4;
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 0 10px rgba(70, 130, 180, 0.2);
+}
+
+/* 响应式设计 - 用户资料面板 */
+@media (max-width: 768px) {
+    .profile-panel {
+        padding: 30px 20px;
+        margin: 20px;
+        max-height: 95vh;
+    }
+    
+    .profile-panel-title {
+        font-size: 18px;
+    }
+    
+    .field-label {
+        font-size: 14px;
+    }
+    
+    .field-label::before,
+    .field-label::after {
+        width: 20px;
+        left: -30px;
+    }
+    
+    .field-label::after {
+        right: -30px;
+    }
+    
+    .profile-input,
+    .profile-select {
+        font-size: 14px;
+        padding: 10px 16px;
+    }
+    
+    .field-note {
+        font-size: 11px;
+    }
+    
+    .memory-section {
+        padding: 15px;
+    }
+    
+    .memory-title {
+        font-size: 14px;
+    }
+    
+    .memory-input {
+        font-size: 13px;
+        padding: 6px 12px;
+    }
+}
