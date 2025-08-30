@@ -12,7 +12,11 @@
       "dest": "/backend/server.js"
     },
     {
-      "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|vrm|html))",
+      "src": "/",
+      "dest": "/character-select.html"
+    },
+    {
+      "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|vrm|html))$",
       "dest": "/$1"
     },
     {
