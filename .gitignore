@@ -46,3 +46,4 @@ logs
 # Cache
 .npm
 .eslintcache
+.vercel
