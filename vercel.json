@@ -2,6 +2,22 @@
   "version": 2,
   "builds": [
     {
+      "src": "**/*.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "**/*.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "**/*.css",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "**/*.{png,jpg,jpeg,gif,ico,svg,woff,woff2,ttf,eot,vrm}",
+      "use": "@vercel/static"
+    },
+    {
       "src": "backend/server.js",
       "use": "@vercel/node"
     }
@@ -16,12 +32,8 @@
       "dest": "/character-select.html"
     },
     {
-      "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|vrm|html))$",
-      "dest": "/$1"
-    },
-    {
       "src": "/(.*)",
-      "dest": "/character-select.html"
+      "dest": "/$1"
     }
   ]
 }
