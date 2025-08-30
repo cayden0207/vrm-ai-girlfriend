@@ -1440,33 +1440,51 @@ app.post('/api/chat/:characterId', chatLimiter, async (req, res) => {
             });
         }
         
-        // 在Vercel环境下，跳过用户文件系统验证
+        // 优先使用Supabase，回退到文件系统或内存
         let user = null;
-        if (process.env.VERCEL) {
-            console.log('⚡ Vercel环境：使用简化用户模式');
-            // 在Vercel上不使用文件系统，直接创建虚拟用户
-            user = {
-                id: userId,
-                nickname: `用户${userId.slice(-8)}`,
-                avatar: '🦊',
-                walletAddress: userId.replace('wallet_', '')
-            };
-        } else {
+        console.log('🔍 查找用户:', userId);
+        
+        // 尝试从Supabase获取用户
+        if (supabaseUserManager.isAvailable()) {
+            console.log('📊 使用Supabase查找用户');
+            const walletAddress = userId.replace('wallet_', '');
+            user = await supabaseUserManager.getUserProfile(walletAddress);
+            
+            if (!user) {
+                console.log('👤 Supabase中用户不存在，创建新用户');
+                // 在Supabase中创建用户
+                const profileData = {
+                    walletAddress,
+                    nickname: `用户${walletAddress.slice(-8)}`,
+                    avatar: '🦊',
+                    createdAt: new Date().toISOString()
+                };
+                user = await supabaseUserManager.createUserProfile(profileData);
+                console.log('✅ Supabase用户创建成功');
+            }
+        } else if (!process.env.VERCEL) {
             // 本地环境使用文件系统
-            console.log('🔍 查找用户:', userId);
+            console.log('📁 使用文件系统查找用户');
             user = await UserManager.getUser(userId);
             if (!user) {
-                console.log('👤 用户不存在，尝试创建...');
+                console.log('👤 文件系统中用户不存在，创建新用户');
                 const walletAddress = userId.replace('wallet_', '');
                 user = await UserManager.createUser({
                     walletAddress,
                     nickname: `用户${walletAddress.slice(-8)}`,
                     avatar: '🦊'
                 });
-                console.log(`🎉 自动创建用户成功: ${formatAddress(walletAddress)}`);
-            } else {
-                console.log('✅ 找到现有用户');
+                console.log('✅ 文件系统用户创建成功');
             }
+        } else {
+            // Vercel环境且Supabase不可用，使用内存用户
+            console.log('⚠️ Vercel环境且Supabase不可用，使用临时用户');
+            user = {
+                id: userId,
+                nickname: `用户${userId.slice(-8)}`,
+                avatar: '🦊',
+                walletAddress: userId.replace('wallet_', '')
+            };
         }
         
         // 生成AI回复（内部已包含角色隔离验证）
