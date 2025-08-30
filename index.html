@@ -2009,7 +2009,7 @@
                 const vrmHipsHeight = vrm.humanoid.normalizedRestPose.hips.position[1];
                 const hipsPositionScale = vrmHipsHeight / motionHipsHeight;
 
-                console.log(`🎬 ActorCore动画处理: ${clip.name}, 轨道数量: ${clip.tracks.length}`);
+                // console.log(`🎬 ActorCore动画处理: ${clip.name}, 轨道数量: ${clip.tracks.length}`);
 
                 clip.tracks.forEach((track) => {
                     const trackSplitted = track.name.split('.');
@@ -2058,7 +2058,7 @@
                     }
                 });
 
-                console.log(`✅ ActorCore动画重定向完成，生成轨道数量: ${tracks.length}`);
+                // console.log(`✅ ActorCore动画重定向完成，生成轨道数量: ${tracks.length}`);
                 return new THREE.AnimationClip('actorCoreAnimation', clip.duration, tracks);
             });
         }
@@ -2252,7 +2252,7 @@
 
             try {
                 currentVrm.expressionManager.setValue(expressionName, value);
-                console.log(`😊 设置表情: ${expressionName} = ${value}`);
+                // console.log(`😊 设置表情: ${expressionName} = ${value}`);
 
                 // 更新状态显示
                 if (value > 0.5) {
@@ -2435,7 +2435,7 @@
                         // 获取动画时长，动画结束后返回待机
                         const animationDuration = clip.duration * 1000; // 转换为毫秒
                         returnToIdleTimer = setTimeout(() => {
-                            console.log('🔄 返回待机动画');
+                            // console.log('🔄 返回待机动画');
                             loadAnimation(idleAnimationUrl);
                         }, animationDuration + 500); // 动画结束后0.5秒返回待机
                     }
@@ -2456,7 +2456,7 @@
                     }
                 }
 
-                console.log(`🎬 动画加载成功: ${animationName} (${isActorCore ? 'ActorCore' : 'Mixamo'})`);
+                // console.log(`🎬 动画加载成功: ${animationName} (${isActorCore ? 'ActorCore' : 'Mixamo'})`);
 
             } catch (error) {
                 console.error('❌ 动画加载失败:', error);
@@ -2518,7 +2518,7 @@
                 }
             }
 
-            console.log('🎮 VRM加载调试信息:');
+            // console.log('🎮 VRM加载调试信息:');
             console.log('- characterName:', characterName);
             console.log('- vrmPath:', vrmPath);
             console.log('- defaultVrmFile:', defaultVrmFile);
@@ -2543,9 +2543,9 @@
             loader.load(
                 vrmPath,
                 (gltf) => {
-                    console.log('🎉 VRM文件加载成功!', gltf);
+                    // console.log('🎉 VRM文件加载成功!', gltf);
                     const vrm = gltf.userData.vrm;
-                    console.log('📦 VRM对象:', vrm);
+                    // console.log('📦 VRM对象:', vrm);
 
                     // 使用VRM v2兼容的优化方法
                     VRMUtils.removeUnnecessaryVertices(gltf.scene);
@@ -2607,14 +2607,14 @@
                     // 默认播放待机动画
                     loadAnimation(idleAnimationUrl);
 
-                    console.log('🎭 VRM 加载完成:', vrm);
+                    // console.log('🎭 VRM 加载完成:', vrm);
                     
                     // 初始化AI聊天系统
                     onVRMLoadComplete(currentCharacterName, vrmPath);
                 },
                 (progress) => {
                     const percent = (100.0 * (progress.loaded / progress.total)).toFixed(1);
-                    console.log(`📊 VRM加载进度: ${percent}%`, progress);
+                    // console.log(`📊 VRM加载进度: ${percent}%`, progress);
                     updateVRMStatus(`加载中... ${percent}%`);
                 },
                 (error) => {
@@ -3342,7 +3342,7 @@
 
             const animationPath = animationMap[selectedAnimation];
             if (animationPath) {
-                console.log(`🎬 播放动画: ${selectedAnimation}`);
+                // console.log(`🎬 播放动画: ${selectedAnimation}`);
                 loadAnimation(animationPath);
                 document.getElementById('current-animation').textContent = selectedAnimation;
             } else {
@@ -3700,7 +3700,7 @@
         function initializeAIChat() {
             if (window.chatSystemV2 && selectedCharacter) {
                 window.chatSystemV2.setCharacter(selectedCharacter);
-                console.log('💕 AI聊天系统V2已连接到角色:', selectedCharacter.name);
+                // console.log('💕 AI聊天系统V2已连接到角色:', selectedCharacter.name);
                 
                 // 添加欢迎消息（如果是新对话）
                 setTimeout(async () => {
@@ -3790,7 +3790,7 @@
                     }
                 }, 2000);
                 
-                console.log(`😊 触发VRM表情: ${expression} -> ${vrmExpression}`);
+                // console.log(`😊 触发VRM表情: ${expression} -> ${vrmExpression}`);
             }
         };
         
@@ -4168,14 +4168,14 @@
                 
                 // 暂时跳过记忆系统初始化，直接使用OpenAI
                 console.log('⚠️ 跳过记忆系统初始化，直接使用OpenAI聊天');
-                console.log('💬 聊天系统已准备就绪');
+                // console.log('💬 聊天系统已准备就绪');"
 
                 // 用户资料检查已移至init()函数中，确保在钱包验证后立即执行
                 
                 // 等待聊天系统初始化
                 setTimeout(() => {
                     if (window.chatSystemV2) {
-                        console.log('💬 聊天系统已准备就绪');
+                        // console.log('💬 聊天系统已准备就绪');"
                     }
                 }, 1000);
             }
