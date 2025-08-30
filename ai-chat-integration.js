@@ -137,7 +137,8 @@ ${characterData.characterTraits}`;
             
             // 从API获取用户资料 - 与character-select.html中的实现一致
             const apiUrl = window.AppConfig ? window.AppConfig.getApiUrl() : 'http://localhost:3000';
-            const response = await fetch(`${apiUrl}/api/profiles/${walletAddress}`);
+            const profileUrl = apiUrl ? `${apiUrl}/api/profiles/${walletAddress}` : `/api/profiles/${walletAddress}`;
+            const response = await fetch(profileUrl);
             
             if (response.ok) {
                 const result = await response.json();
@@ -323,7 +324,8 @@ ${characterData.characterTraits}`;
             };
             
             // 调用后端API
-            const response = await fetch(`${this.API_URL}/api/chat/${characterId}`, {
+            const apiUrl = this.API_URL ? `${this.API_URL}/api/chat/${characterId}` : `/api/chat/${characterId}`;
+            const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

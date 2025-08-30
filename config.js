@@ -23,7 +23,9 @@ const AppConfig = {
     
     // 获取API基础URL
     getApiUrl() {
-        return this.API[this.environment].baseURL;
+        const baseURL = this.API[this.environment].baseURL;
+        // 生产环境返回空字符串表示使用相对路径
+        return baseURL;
     },
     
     // 注意：Supabase访问已迁移到后端，前端不再需要直接访问
