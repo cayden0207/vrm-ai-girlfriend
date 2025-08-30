@@ -307,9 +307,7 @@ ${characterData.characterTraits}`;
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    walletAddress: this.walletAddress,
-                    signature: 'auto_generated', // 简化版本，生产环境应该有真实签名
-                    message: `登录时间: ${new Date().toISOString()}`
+                    walletAddress: this.walletAddress
                 })
             });
             
