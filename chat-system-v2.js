@@ -552,7 +552,7 @@ class AIGirlfriendChatSystemV2 {
         this.isLoading = true;
         
         try {
-            // 🚨 强制使用后端API进行测试
+            // 使用后端API进行记忆系统聊天
             if (false && window.aiChatIntegration) {
                 // 创建一个空的AI消息占位符
                 const aiMessage = {

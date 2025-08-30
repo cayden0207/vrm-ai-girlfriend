@@ -760,29 +760,41 @@ class AIProxy {
         try {
             console.log('🤖 开始生成AI回复:', { userId, characterId, message });
             
-            // 🚨 临时绕过记忆系统，直接生成回复
-            const simplePrompt = `你是${context.character?.name || 'Alice'}，一个活泼可爱的AI女友。
-
-用户说: ${message}
-
-请以${context.character?.name || 'Alice'}的身份回复，要求：
-1. 回复要自然友好，20-50字
-2. 可以使用emoji
-3. 体现活泼可爱的性格
-
-直接回复，不需要JSON格式。`;
-
-            console.log('📝 使用简化提示词:', simplePrompt);
+            // 获取用户记忆
+            const memory = await MemoryManager.getUserMemory(userId, characterId);
             
-            // 直接调用OpenAI，返回简单格式
-            const aiContent = await this.callSimpleOpenAI(simplePrompt);
+            // 构建复杂提示词
+            const prompt = this.buildPrompt(message, context, memory);
             
-            const response = {
-                content: aiContent,
-                emotion: 'happy'
+            // 调用AI API
+            const response = await this.callAIAPI(prompt);
+            
+            // 保存聊天记录
+            const userMessage = {
+                id: Date.now(),
+                sender: 'user',
+                content: message,
+                timestamp: new Date().toISOString()
             };
             
-            console.log('✅ AI回复生成成功:', response);
+            const aiMessage = {
+                id: Date.now() + 1,
+                sender: 'ai',
+                content: response.content,
+                timestamp: new Date().toISOString(),
+                emotion: response.emotion || 'neutral'
+            };
+            
+            await MemoryManager.addChatMessage(userId, characterId, userMessage);
+            await MemoryManager.addChatMessage(userId, characterId, aiMessage);
+            
+            // 提取用户信息
+            await MemoryManager.extractKeyInfo(userId, characterId, message, true);
+            
+            // 更新用户聊天计数
+            await UserManager.incrementChatCount(userId);
+            
+            console.log('✅ AI回复生成成功 (含记忆):', response);
             return response;
             
         } catch (error) {
