@@ -1086,12 +1086,17 @@ app.post('/api/profiles', async (req, res) => {
         } else {
             // 文件系统回退
             console.log('📁 Supabase不可用，使用文件系统存储');
-            const userFile = path.join(USERS_DIR, `wallet_${walletAddress}.json`);
+            const userId = `wallet_${walletAddress}`;
+            const userFile = path.join(USERS_DIR, `${userId}.json`);
             const fileData = {
                 ...fullProfileData,
-                id: uuidv4(),
+                id: userId,  // 使用wallet_前缀的ID，保持与UserManager一致
                 created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
+                updated_at: new Date().toISOString(),
+                createdAt: new Date().toISOString(),  // UserManager兼容字段
+                lastActive: new Date().toISOString(),  // UserManager兼容字段
+                totalChats: 0,  // UserManager兼容字段
+                favoriteCharacters: []  // UserManager兼容字段
             };
             
             await fs.writeFile(userFile, JSON.stringify(fileData, null, 2));
