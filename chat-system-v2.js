@@ -582,8 +582,15 @@ class AIGirlfriendChatSystemV2 {
                     }
                 );
                 
-                // 确保最终消息是完整的
-                aiMessage.content = fullResponse;
+                // 🐛 修复：只有当fullResponse有效且不同时才覆盖
+                if (fullResponse && fullResponse.trim() !== aiMessage.content.trim()) {
+                    console.log('🔄 更新最终消息:', { 
+                        stream: aiMessage.content.substring(0, 50),
+                        full: fullResponse.substring(0, 50) 
+                    });
+                    aiMessage.content = fullResponse;
+                    this.updateStreamingMessage(aiMessage);
+                }
                 this.isLoading = false;
                 
             } else {

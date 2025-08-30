@@ -176,21 +176,51 @@ class MemoryManager {
                 throw new Error(`Invalid character ID: ${characterId}`);
             }
             
-            const memoryData = await fs.readFile(
-                path.join(MEMORIES_DIR, `${userId}_${characterId}.json`),
-                'utf8'
-            );
-            const memory = JSON.parse(memoryData);
+            console.log('🧠 获取用户记忆:', { userId, characterId });
             
-            // 双重验证：确保内存数据与请求的角色ID匹配
-            if (memory.characterId !== characterId) {
-                console.warn(`Memory character mismatch: expected ${characterId}, got ${memory.characterId}`);
-                return this.createNewMemoryStructure(userId, characterId);
+            // 优先使用Supabase
+            if (supabaseUserManager.isAvailable()) {
+                console.log('📊 使用Supabase获取记忆');
+                const walletAddress = userId.replace('wallet_', '');
+                const memoryKey = `${walletAddress}_${characterId}_memory`;
+                
+                const { data, error } = await supabaseUserManager.supabase
+                    .from('user_memories')
+                    .select('memory_data')
+                    .eq('user_id', walletAddress)
+                    .eq('character_id', characterId)
+                    .single();
+                    
+                if (data && data.memory_data) {
+                    console.log('✅ Supabase记忆数据已加载');
+                    const memory = data.memory_data;
+                    return this.ensureMemoryStructure(memory, userId, characterId);
+                }
             }
             
-            // 确保记忆结构完整
-            return this.ensureMemoryStructure(memory, userId, characterId);
+            // Fallback到文件系统（开发环境）
+            try {
+                const memoryData = await fs.readFile(
+                    path.join(MEMORIES_DIR, `${userId}_${characterId}.json`),
+                    'utf8'
+                );
+                const memory = JSON.parse(memoryData);
+                
+                // 双重验证：确保内存数据与请求的角色ID匹配
+                if (memory.characterId !== characterId) {
+                    console.warn(`Memory character mismatch: expected ${characterId}, got ${memory.characterId}`);
+                    return this.createNewMemoryStructure(userId, characterId);
+                }
+                
+                return this.ensureMemoryStructure(memory, userId, characterId);
+            } catch (fsError) {
+                console.log('📁 文件系统记忆不存在，创建新记忆');
+            }
+            
+            // 创建新记忆
+            return this.createNewMemoryStructure(userId, characterId);
         } catch (error) {
+            console.error('❌ 获取记忆失败:', error);
             // 创建新的完整记忆结构
             return this.createNewMemoryStructure(userId, characterId);
         }
@@ -368,9 +398,35 @@ class MemoryManager {
             throw new Error(`Invalid memory file path: ${filePath}`);
         }
         
-        await fs.writeFile(filePath, JSON.stringify(memory, null, 2));
+        // 优先使用Supabase
+        if (supabaseUserManager.isAvailable()) {
+            console.log('📊 使用Supabase保存记忆');
+            const walletAddress = userId.replace('wallet_', '');
+            
+            const { error } = await supabaseUserManager.supabase
+                .from('user_memories')
+                .upsert({
+                    user_id: walletAddress,
+                    character_id: characterId,
+                    memory_data: memory,
+                    updated_at: new Date().toISOString()
+                });
+                
+            if (!error) {
+                console.log(`💾 Supabase记忆保存成功: ${userId} - ${characterId}`);
+                return;
+            } else {
+                console.error('❌ Supabase保存失败:', error);
+            }
+        }
         
-        console.log(`💾 保存记忆: ${userId} - ${characterId} (隔离验证通过)`);
+        // Fallback到文件系统（开发环境）
+        try {
+            await fs.writeFile(filePath, JSON.stringify(memory, null, 2));
+            console.log(`💾 文件系统记忆保存成功: ${userId} - ${characterId}`);
+        } catch (fsError) {
+            console.log('⚠️ 文件系统不可用（Vercel环境），记忆仅在当前会话有效');
+        }
     }
     
     // 添加聊天记录（增强版）
