@@ -332,8 +332,8 @@ ${characterData.characterTraits}`;
                 this.initializeUser();
             }
             
-            // 确保用户已在后端注册
-            await this.ensureUserRegistered();
+            // 临时跳过用户注册验证，直接使用前端API
+            // await this.ensureUserRegistered();
             
             // 添加用户消息到历史
             this.conversationHistory.push({

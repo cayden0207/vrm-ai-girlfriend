@@ -1413,11 +1413,18 @@ app.post('/api/user/auth', async (req, res) => {
 
 // 发送聊天消息（带角色隔离验证和速率限制）
 app.post('/api/chat/:characterId', chatLimiter, async (req, res) => {
+    console.log('📥 收到聊天请求:', { 
+        characterId: req.params.characterId, 
+        userId: req.body.userId,
+        hasMessage: !!req.body.message 
+    });
+    
     try {
         const { characterId } = req.params;
         const { userId, message, character } = req.body;
         
         if (!userId || !message) {
+            console.error('❌ 缺少必要参数:', { userId, hasMessage: !!message });
             return res.status(400).json({ 
                 success: false, 
                 error: '缺少必要参数' 
@@ -1426,6 +1433,7 @@ app.post('/api/chat/:characterId', chatLimiter, async (req, res) => {
         
         // 验证角色ID有效性（角色隔离第一道防线）
         if (!MemoryManager.isValidCharacterId(characterId)) {
+            console.error('❌ 无效的角色ID:', characterId);
             return res.status(400).json({ 
                 success: false, 
                 error: '无效的角色ID' 
@@ -1433,8 +1441,10 @@ app.post('/api/chat/:characterId', chatLimiter, async (req, res) => {
         }
         
         // 验证用户，如果不存在则自动创建
+        console.log('🔍 查找用户:', userId);
         let user = await UserManager.getUser(userId);
         if (!user) {
+            console.log('👤 用户不存在，尝试创建...');
             // 自动创建用户
             const walletAddress = userId.replace('wallet_', '');
             user = await UserManager.createUser({
@@ -1442,7 +1452,9 @@ app.post('/api/chat/:characterId', chatLimiter, async (req, res) => {
                 nickname: `用户${walletAddress.slice(-8)}`,
                 avatar: '🦊'
             });
-            console.log(`🎉 自动创建用户: ${formatAddress(walletAddress)}`);
+            console.log(`🎉 自动创建用户成功: ${formatAddress(walletAddress)}`);
+        } else {
+            console.log('✅ 找到现有用户');
         }
         
         // 生成AI回复（内部已包含角色隔离验证）
@@ -1531,6 +1543,29 @@ app.get('/api/health', (req, res) => {
         status: 'ok', 
         timestamp: new Date().toISOString(),
         version: '1.0.0'
+    });
+});
+
+// 测试端点 - 检查环境变量和配置
+app.get('/api/test-config', (req, res) => {
+    res.json({
+        status: 'ok',
+        env: {
+            hasOpenAI: !!process.env.OPENAI_API_KEY,
+            hasElevenLabs: !!process.env.ELEVENLABS_API_KEY,
+            hasSupabase: !!process.env.SUPABASE_URL,
+            nodeEnv: process.env.NODE_ENV,
+            isVercel: !!process.env.VERCEL
+        },
+        directories: {
+            dataDir: DATA_DIR,
+            usersDir: USERS_DIR,
+            memoriesDir: MEMORIES_DIR
+        },
+        aiConfig: {
+            provider: AI_CONFIG.provider,
+            hasKey: !!AI_CONFIG.apiKey
+        }
     });
 });
 
