@@ -755,40 +755,31 @@ class MemoryManager {
 class AIProxy {
     static async generateResponse(userId, characterId, message, context = {}) {
         try {
-            // 获取用户记忆
-            const memory = await MemoryManager.getUserMemory(userId, characterId);
+            console.log('🤖 开始生成AI回复:', { userId, characterId, message });
             
-            // 构建提示词
-            const prompt = this.buildPrompt(message, context, memory);
+            // 🚨 临时绕过记忆系统，直接生成回复
+            const simplePrompt = `你是${context.character?.name || 'Alice'}，一个活泼可爱的AI女友。
+
+用户说: ${message}
+
+请以${context.character?.name || 'Alice'}的身份回复，要求：
+1. 回复要自然友好，20-50字
+2. 可以使用emoji
+3. 体现活泼可爱的性格
+
+直接回复，不需要JSON格式。`;
+
+            console.log('📝 使用简化提示词:', simplePrompt);
             
-            // 调用AI API
-            const response = await this.callAIAPI(prompt);
+            // 直接调用OpenAI，返回简单格式
+            const aiContent = await this.callSimpleOpenAI(simplePrompt);
             
-            // 保存聊天记录
-            const userMessage = {
-                id: Date.now(),
-                sender: 'user',
-                content: message,
-                timestamp: new Date().toISOString()
+            const response = {
+                content: aiContent,
+                emotion: 'happy'
             };
             
-            const aiMessage = {
-                id: Date.now() + 1,
-                sender: 'ai',
-                content: response.content,
-                timestamp: new Date().toISOString(),
-                emotion: response.emotion || 'neutral'
-            };
-            
-            await MemoryManager.addChatMessage(userId, characterId, userMessage);
-            await MemoryManager.addChatMessage(userId, characterId, aiMessage);
-            
-            // 提取用户信息
-            await MemoryManager.extractKeyInfo(userId, characterId, message, true);
-            
-            // 更新用户聊天计数
-            await UserManager.incrementChatCount(userId);
-            
+            console.log('✅ AI回复生成成功:', response);
             return response;
             
         } catch (error) {
@@ -1010,7 +1001,46 @@ ${recentChats.map(chat => `${chat.sender === 'user' ? '用户' : character.name}
         }
     }
     
-    // OpenAI API调用
+    // 简化的OpenAI API调用 - 直接返回文本
+    static async callSimpleOpenAI(prompt) {
+        console.log('🔄 调用OpenAI API (简化版)...');
+        console.log('🔑 API Key状态:', AI_CONFIG.apiKey ? `有效 (${AI_CONFIG.apiKey.length}字符)` : '缺失');
+        
+        const response = await fetch(`${AI_CONFIG.baseURL}/chat/completions`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${AI_CONFIG.apiKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: AI_CONFIG.model,
+                messages: [{ role: 'user', content: prompt }],
+                temperature: AI_CONFIG.temperature,
+                max_tokens: 100
+            })
+        });
+        
+        console.log('📡 API响应状态:', response.status);
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('❌ OpenAI API错误:', errorData);
+            throw new Error(`OpenAI API错误: ${response.status} - ${errorData.error?.message || '未知错误'}`);
+        }
+        
+        const data = await response.json();
+        console.log('📦 API响应数据:', JSON.stringify(data, null, 2));
+        
+        if (data.choices && data.choices[0]) {
+            const content = data.choices[0].message.content.trim();
+            console.log('✅ OpenAI回复:', content);
+            return content;
+        }
+        
+        throw new Error('OpenAI API响应格式错误');
+    }
+
+    // OpenAI API调用 (保留原版本)
     static async callOpenAI(prompt) {
         console.log('🔄 调用OpenAI API...');
         console.log('🔑 API Key长度:', AI_CONFIG.apiKey ? AI_CONFIG.apiKey.length : 'undefined');
